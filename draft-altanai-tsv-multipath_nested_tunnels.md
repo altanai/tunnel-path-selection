@@ -19,7 +19,7 @@
 # Change the file extension to match the format (.xml for XML, etc...)
 #
 ###
-title: "TODO - Your title"
+title: "Multipath Nested Tunnels"
 abbrev: "TODO - Abbreviation"
 category: info
 
@@ -32,22 +32,22 @@ v: 3
 area: AREA
 workgroup: WG Working Group
 keyword:
- - next generation
- - unicorn
- - sparkling distributed ledger
+ - MASQUE
+ - VPN
+ - Network Tunnelling protocols
 venue:
-  group: WG
+  group: Transport WG
   type: Working Group
-  mail: WG@example.com
+  mail: altanai@outlook.com
   arch: https://example.com/WG
-  github: USER/REPO
+  github: altanai/multipath-nested-tunnels/
   latest: https://example.com/LATEST
 
 author:
  -
-    fullname: Your Name Here
-    organization: Your Organization Here
-    email: your.email@example.com
+    fullname: Altanai B
+    organization: Cisco Meraki
+    email: altanai@outlook.com
 
 normative:
 
