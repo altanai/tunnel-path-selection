@@ -9,19 +9,19 @@ number:
 date:
 consensus: true
 v: 3
-area: AREA
-workgroup: WG Working Group
+area: "Internet Engineering Steering Group"
+workgroup: "Transport Area"
 keyword:
  - MASQUE
  - VPN
  - Network Tunnelling protocols
 venue:
-  group: Transport WG
-  type: Working Group
-  mail: altanai@outlook.com
-  arch: https://example.com/WG
-  github: altanai/multipath-nested-tunnels/
-  latest: https://example.com/LATEST
+  group: "Transport Area"
+  type: "Area"
+  mail: ""
+  arch: ""
+  github: "altanai/multipath-nested-tunnels"
+  latest: "https://altanai.github.io/multipath-nested-tunnels/draft-altanai-tsv-multipath_nested_tunnels.html"
 
 author:
  -
