@@ -36,16 +36,14 @@ informative:
 
 --- abstract
 
-TODO Abstract
+This document identifies the real world problem of choosing a path when among simultaneously available multiple paths. It then shows the interoperability issues in multilevel tunnels on these paths, highlighting the shortcoming of the existing approaches to meet the load sharing and prioritization requirements. It proposes a holistic algorithmic approach to the decision making process.
 
 
 --- middle
 
 # Introduction
 
-This document identifies the problems around simultaneously multipath and multilevel tunnels. It further highights the interoperability issues with network and application level tunnels.
-Traditionaly, tunnels made up a secure interconnection called VPN and proivded a secure and private subnet to pass tarrfic between the tunnelled endpoints. This setup catered to enterprises and small private home networks alike. The egress points provided a gateway for outgoing traffic destinated for the internet but only after annoymizing the source. The protocols supported such network level tunneling include GRE, L2P, IPSec, OpenVPN and even propertiary protocols such as AutoVPN.  
-With the advent of  QUIC, application level tunnels such as MASQUE is quickly gaining widespread adoption. However there are many usecases where network tunnels nest application tunnels which leads to large overheads in latency and quality of data. 
+A path for sending data across a network can consist of a combination of many factors such as uplink, application layer protocol, tunneling protocol among others. For example TLS  operates above the network layer, SSH and Secure Real-time Transport Protocol (SRTP) [RFC 5764] operates at the application layer to carry data. Stream Control Transmission Protocol (SCTP), intended to tunnel signaling messages over IP networks, can encapsulate data as well. Tunneling can build a secure interconnection called Virtual Private Network(VPN) that provides a private subnet to pass traffic between the tunneled endpoints. This setup caters to enterprises and small private home networks alike. The protocols for such network level tunneling may include GRE, L2P, IPSec, WireGuard, OpenVPN and even proprietary protocols such as AutoVPN or custom implementtion over DTLS. Now multiple proxied stream- and datagram-based flows are possible inside an HTTP connection through the MASQUE which is build on QUIC. However there may be real world use-cases where network tunnels could nest application tunnels, which leads to large overheads in latency and quality of data. 
 
 # Problem Statement
 Many network service providers create sharing and resiliency by making traffic to be split, load balanced across multiple uplinks or failover to standby when any of the exisitng uplinks fail. Many mordern implementations use traffic shaping policies based on the network metrics such as loss, latency. Others can  prioritize flows based on intelligent classification ML models. There are many application specific logic that improve the selection process and also encourage fairness however such system designs lacks reusability on both the control and data plane.
@@ -61,7 +59,7 @@ The VPN gateways can either load share or selectively choose best path to route 
 Nested tunnels greatly impact the traffic quality often resulting in fragmentation and defragmentation, as well as computational overhead in multiple encapsulations which incrreases the processor workload.
 
 ## MTU and Fragmentation 
-QUIC has set MTU size limits and UDP in contrast has a large limit. As opposed to this a non-tunneled traffic has lesser MTU restrictions and thus saves up processing time on fragmentation and defragmentation.
+QUIC has set MTU size limits and UDP in contrast has a large limit. As opposed to this a non-tunneled traffic has lesser MTU restrictions and thus saves up processing time on fragmentation and defragmentation. Prior work has been done on the subject such as MTU and fragmentation considerations for In-the-Network Tunneling [RFC4459] 
 
 ## Increased Latency
 Considering limited bandwidth, with the overhead involved with nested tunnels and path selection the time sensitive streams are impacted.
@@ -73,12 +71,13 @@ The inner tunnel carrying multiplexed streams may imply congestion control assum
 ## Conflicting prioritization 
 
 Mainstream techniques such as packet marking( DSCP, ECN so on ) and queuing of other non-critical traffic (Fq-CODEL, CAKE AQM) to optimize for realtime streams is essentially prioritization in practice. However, VPN providers, CSPs and/or ISP may employ polar-opposite algorithms to shape traffic based on their interest which could lead to  an overall non-synchronized approach, where a stream is prioritized in some networks and deprioritized in other networks. 
+![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/884803aa-fa1a-4511-a5b1-c37ca1295013)
 
-The VPN can be considered a limited premium network that protects confidentail information of an organization such as buisness communication between retail stores.
+The VPN can be considered a limited premium network that protects confidential information of an organization such as business communication between retail stores.
 
 Hybrid work and move towards private access has increased the interest in tunneling traffic between endpoints. However at present, the traffic steering decision is made in a limited scoped or rule based manner which is different for various networks and service providers. Instead an alternative dynamic strategy is proposed which gauges the confidence in the various available options dynamically and may choose to send data directly via edge gateway, use one or more of the available tunnels or create a new on-demand tunnel, leveraging any of the tunneling protocols best suited.  
 
-At present, in the case of multiple active uplinks connecting to various ISPs, there are multiple techniques to steer or prioritize traffic across the network, which may include, 
+At present, in the case of multiple active uplinks connecting to various ISPs, there are multiple techniques to steer or prioritize traffic across the network[https://datatracker.ietf.org/doc/draft-ietf-intarea-tunnels/], which may include, 
 
 ### 1: Full or Split tunnel based on DSCP tags( Diffserv). 
 For example in case of dual uplinks connected and two tunnels active, use the one more with better performance for RTP traffic. 
@@ -94,7 +93,28 @@ The aplication knows its type and can directly feed the information to the algor
 
 MASQUE (QUIC multiplexing)
 
-# Proposal to standardise the prioritization algorithm
+![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/198f4b91-c18b-4326-8e17-09372a5edb87)
+
+## Past proposals for prioritiztion 
+
+- 1. whitelist for IP address to prioritize
+    - (+) simple
+    - (-) not scalable
+
+- 2. Entropy headers
+Entropy headers are extension to traditional packet header that include information about the randomness of the packet's payload. These help distributing traffic more evenly in a multipath network, mitigating the risk of hotspots and potential congestion points.
+
+- 3. Diff Serv via Differentiated Services Code Point (DSCP) 
+RFC 3270 defines how to support the Diffserv architecture in MPLS networks, including how to encode DSCP in an MPLS header. Application priorities even though using the same protocol have also been used to mark the packets differently such as DSCP PAcket Markings for WebRTC QoS [RFC8807].
+    - (+) widely adopted
+    - (-) Unreliable in some cases 
+   
+- 4. Tunnelling of Explicit Congestion Notification(ECN)
+Addition of ECN to IP [RFC3168] paved the way for much  optimization in managing queues based on these marking. RFC 6040 descibes the problems related to obscured original ECN markings in tunneled traffic. It proposes a standard for tunnels to propagate an extra level of congestion severity.
+    - (+) Existing stanadrds exists
+    - (-) complicated for nested tunnels 
+
+# Proposal to standardise the selection algorithm
 
 By dynamically deciding the tunnel type for a stream or packet, we could avoid the non-performing or counter-productive use-cases such as 
 * added latency on real time streaming 
@@ -106,22 +126,19 @@ By dynamically deciding the tunnel type for a stream or packet, we could avoid t
 The proposal is to standardize an algorithm that computes multiple available options and decides whether, on-demand tunnels are created (via  MASQUE, IPSec, SSH, GRE other proprietary protocols such as AutoVPN), an existing set of tunnels be reused or any other route, based on the current network dynamics and vulnerability of the traffic. 
 Standardized Path selection decision making making algorithm would ensure same treatment of the stream across heterogeneous networks. 
 
-Input Datapoints for the algorithm :
-
-1. Entropy headers
-Entropy headers are extension to traditional packet header that include information about the randomness of rthe packet's payload. These help distributing traffic more evenly in a a ultipath network, mitigating the risk of hotspots and potential congestion points.
-2. Provisioning domains
-3. Network state :
+A suggestive, non-exhaustive list of input datapoints for the algorithm :
+1. Bandwith which can be obtained to bandwith estimation algorithms or implied by other metrics such as BandWidth Delay product(BDP) or even observed instantenous throughput that forms the core of many Congestion-control algorithms. 
+2. Provisioning domains (PvD)
+3. Network state : Telemetrics data about the health of the network.
  YANG models telemetry information 
 4. Vulnerabilty of Data : End to end encrypted data would have a low vulnerabilty score than plaintext data.
-5. Time sensitivity of data : Many drafts and proposals reserve networ resources or prioritze critical support traffic such as E911. While the time sensitivity is subjected to application's decision and a machine learning models can be supervised to classify imposters, the proposed algorithm does not suggest a way to compute this value itself.
-6.    
-7. carbon footprint is an optional data point that may be added to algorithim. The data for the carbon footprint can be based on multiple factors which may include Datacenter's carbon footprint, energy grid's instantenous carbon footprint for fuel mix, sender's application or network provider's carbon footprint among other options.
-8. 
+5. Time sensitivity of data : Many drafts and proposals reserve networ resources or prioritze critical support traffic such as E911. While the time sensitivity is subjected to application's decision and a machine learning models can be supervised to classify imposters, the proposed algorithm does not suggest a way to compute this value itself.   
+6. carbon footprint is an optional data point that may be added to algorithim. The data for the carbon footprint can be based on multiple factors which may include Datacenter's carbon footprint, energy grid's instantenous carbon footprint for fuel mix, sender's application or network provider's carbon footprint among other options.
+7. Cost or available credits
+  
+Prior work that standardized algorithms for networking
+Happy Eyeballs [RFC6555, RFC8305,]  algorithm for dual-stack hosts
 
-
-On the other hand the cons may include 
-ambuiguity 
 
 ## Design goals 
 
@@ -156,18 +173,24 @@ It should not
 
 ##  Implementation Strategies 
 The simplest venue for the implementation of the Path selection algorithm is within the application itself. 
-This algorithm require no specific support from the operating system beyond the commonly available APIs that provide transport service.
-The algorithm has feedback on the path consumed by all applications for this sender and tries to balance the utilization by load balacing between them.
+
+- Minimal OS support : This algorithm require no specific support from the operating system beyond the commonly available APIs that provide transport service.
+
+- Feedback loop : The algorithm has feedback on the path consumed by all applications for this sender and tries to balance the utilization by load balacing between them.
 The proposed path selection algorithm is only tasked with suggesting the protocol and path and can be overridden by the application.
 
-Examples of the decision that may be taken by the standardized algorithm could include; 
-Example 1 : Resource intensive ultra low latency application benefit from direct internet connection such as multiplayer games and if the algorithm's path suggestion doesn't meet the latency target the application can select its own path.
-Example 2 : Tunneling the VoIP traffic via separate routes, for example signaling plane data on VPN tunnel, and media via SRTP/DTLS tunnel. 
-Example 3 : SIP trunk calls may actually benefit from a dedicated IPSec tunnel, pre NATed, pre authenticated and secure, as it would avoid the delay in resetting the path given the volume of calls expected between two endpoints.  
-Example 4 : Heavy file downloads such as VoD could benefit by load sharing between multiple tunnels.  
+- Course correction : While the algorithm relies on the data points to suggest a transport protocol on a link, it can also be misguided by ambiguous or untrust worthy input. The algorithm should be self correcting with the help of feedback and any course correction should minimally impact  cross traffic.
+ 
+Examples of the decision that may be taken by the standardized algorithm could include:
+- Example 1 : Resource intensive ultra low latency application benefit from direct internet connection such as multiplayer games and if the algorithm's path suggestion doesn't meet the latency target the application can select its own path.
+- Example 2 : Tunneling the VoIP traffic via separate routes, for example signaling plane data on VPN tunnel, and media via SRTP/DTLS tunnel. 
+- Example 3 : SIP trunk calls may actually benefit from a dedicated IPSec tunnel, pre NATed, pre authenticated and secure, as it would avoid the delay in resetting the path given the volume of calls expected between two endpoints.  
+- Example 4 : Heavy file downloads such as VoD could benefit by load sharing between multiple tunnels.  
 
 ### Edge cases 
-In the edge case where  there are no other data points to compute the selection logic then every avaiable concurrent path would get a weighted proportion of traffic based on its bandwidth cap. For example if a system has 2 uplinks capable of tunneling trafic with 25Mbps and 75Mbps then uplink 1 will get 25% of the flows while uplink 2 gets 75%.   
+- Missing Datapoints : In the edge case where  there are no other data points to compute the selection logic then every avaiable concurrent path would get a weighted proportion of traffic based on its bandwidth cap. For example if a system has 2 uplinks capable of tunneling trafic with 25Mbps and 75Mbps then uplink 1 will get 25% of the flows while uplink 2 gets 75%.   
+
+- Fail over : In the case, 1 out of the 2 uplink paths being monitored by the algorithm fail, it would then attempt to shape the traffic such that 100% of the load ends up on the same uplink. Note that even on the same uplink the algorithm can suggest different protocols such as Network tunnel, aplication specific tunnel over HTTP proxy or even open access based on the data points. 
 
 # Conventions and Definitions
 
