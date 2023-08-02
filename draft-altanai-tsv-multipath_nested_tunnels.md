@@ -127,18 +127,17 @@ The proposal is to standardize an algorithm that computes multiple available opt
 Standardized Path selection decision making making algorithm would ensure same treatment of the stream across heterogeneous networks. 
 
 A suggestive, non-exhaustive list of input datapoints for the algorithm :
-1. Bandwith which can be obtained to bandwith estimation algorithms or implied by other metrics such as BandWidth Delay product(BDP) or even observed instantenous throughput that forms the core of many Congestion-control algorithms. 
+1. Available bandwith in bits per second, which can be obtained to bandwith estimation algorithms or implied by other metrics such as BandWidth Delay product(BDP) or even observed instantenous throughput that forms the core of many Congestion-control algorithms. 
 2. Provisioning domains (PvD)
 3. Network state : Telemetrics data about the health of the network.
- YANG models telemetry information 
-4. Vulnerabilty of Data : End to end encrypted data would have a low vulnerabilty score than plaintext data.
+ YANG models telemetry information such as 
+4. Vulnerabilty of Data in double precesion decimal value between 0 and 1. For example in case of an end-to-end encrypted datastream over DTLS would have a low vulnerabilty score than plaintext data.
 5. Time sensitivity of data : Many drafts and proposals reserve networ resources or prioritze critical support traffic such as E911. While the time sensitivity is subjected to application's decision and a machine learning models can be supervised to classify imposters, the proposed algorithm does not suggest a way to compute this value itself.   
 6. carbon footprint is an optional data point that may be added to algorithim. The data for the carbon footprint can be based on multiple factors which may include Datacenter's carbon footprint, energy grid's instantenous carbon footprint for fuel mix, sender's application or network provider's carbon footprint among other options.
 7. Cost or available credits
   
-Prior work that standardized algorithms for networking
-Happy Eyeballs [RFC6555, RFC8305,]  algorithm for dual-stack hosts
-
+Prior work that standardized algorithms for networking include 
+- Happy Eyeballs [RFC6555, RFC8305,]  algorithm for dual-stack hosts
 
 ## Design goals 
 
@@ -183,9 +182,20 @@ The proposed path selection algorithm is only tasked with suggesting the protoco
  
 Examples of the decision that may be taken by the standardized algorithm could include:
 - Example 1 : Resource intensive ultra low latency application benefit from direct internet connection such as multiplayer games and if the algorithm's path suggestion doesn't meet the latency target the application can select its own path.
-- Example 2 : Tunneling the VoIP traffic via separate routes, for example signaling plane data on VPN tunnel, and media via SRTP/DTLS tunnel. 
-- Example 3 : SIP trunk calls may actually benefit from a dedicated IPSec tunnel, pre NATed, pre authenticated and secure, as it would avoid the delay in resetting the path given the volume of calls expected between two endpoints.  
-- Example 4 : Heavy file downloads such as VoD could benefit by load sharing between multiple tunnels.  
+![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/f3cf42c7-5ec8-4b15-8aa3-dfc62f29c8e9)
+
+- Example 2 :  VoIP signaling traffic in case of E911 benefit from direct non-tunneled setup such as shown below. Additionally the media could be shared on WebRTC’s SRTP/DTLS format which creates a peer-to-peer path to tunnel media traffic.
+![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/4b0eadc2-b69d-41fb-87a4-cf9273e2d4b2)
+  
+- Example 3 : SIP trunk calls may actually benefit from a dedicated IPSec tunnel, pre NATed, pre authenticated and secure, as it would avoid the delay in resetting the path given the volume of calls expected between two endpoints.
+![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/9b327db9-15a7-4e6f-ac82-de4f50141485)
+
+ 
+- Example 4 : Heavy file downloads such as VoD could benefit by load sharing between multiple tunnels.
+![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/8f1e1a60-54d9-4027-9500-462d4d69e6ca)
+
+ 
+- Example 5 : Management Information Base(MiB) for Internet Small Computer System Interface (iSCSI) can be sent over IpSec Tunnel for longer haul networks such as accross datacentres.
 
 ### Edge cases 
 - Missing Datapoints : In the edge case where  there are no other data points to compute the selection logic then every avaiable concurrent path would get a weighted proportion of traffic based on its bandwidth cap. For example if a system has 2 uplinks capable of tunneling trafic with 25Mbps and 75Mbps then uplink 1 will get 25% of the flows while uplink 2 gets 75%.   
