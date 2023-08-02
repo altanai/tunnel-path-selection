@@ -41,7 +41,7 @@ This document identifies the real world problem of choosing a path when among si
 
 --- middle
 
-# Introduction
+# Introduction 
 
 A path for sending data across a network can consist of a combination of many factors such as uplink, application layer protocol, tunneling protocol among others. For example TLS  operates above the network layer, SSH and Secure Real-time Transport Protocol (SRTP) [RFC 5764] operates at the application layer to carry data. Stream Control Transmission Protocol (SCTP), intended to tunnel signaling messages over IP networks, can encapsulate data as well. Tunneling can build a secure interconnection called Virtual Private Network(VPN) that provides a private subnet to pass traffic between the tunneled endpoints. This setup caters to enterprises and small private home networks alike. The protocols for such network level tunneling may include GRE, L2P, IPSec, WireGuard, OpenVPN and even proprietary protocols such as AutoVPN or custom implementtion over DTLS. Now multiple proxied stream- and datagram-based flows are possible inside an HTTP connection through the MASQUE which is build on QUIC. However there may be real world use-cases where network tunnels could nest application tunnels, which leads to large overheads in latency and quality of data. 
 
@@ -85,19 +85,24 @@ For example in case of dual uplinks connected and two tunnels active, use the on
 ### 2: Multiple Active VPN Uplinks used in weighted round robin order or ECMP 
 Traffic Shaping generic rules based on QoS ( such as MOS, jitter other customized score), attributes such as app type or address or even client identifier such as mac address based shaping. 
 
-### 3. Policy-Based routing that use flow preferences to pin traffic to a particular path. 
+### 3. Policy-Based routing that use flow preferences to pin traffic to a particular path
+It is common for device or network policies to manage network flows. At the device level these policies may prioritize some packets over others to avoid queing delay.
 It could also be Geo or proximity based rules
 
 ### 4. Dynamic Path Selection with application identification 
 The aplication knows its type and can directly feed the information to the algorithm. If the sender is not aware of the application it can attempt to obtain this information from intelligent ML models as Network Based Application Recognition (NBAR) from Cisco or even rely on Explicitly identifying Provisioning Domain Names through a Router Advertisement (RA) option. Discovering Provisioning Domain Names and Data, its architecture involving the authenticatio and trust model has been decribed in prior work [RFC8801, RFC7556] 
 
-MASQUE (QUIC multiplexing)
+### 5. MASQUE (QUIC multiplexing) for all Web trafic.
+
+
 
 ![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/198f4b91-c18b-4326-8e17-09372a5edb87)
 
 ## Past proposals for prioritiztion 
 
-- 1. whitelist for IP address to prioritize
+Some prior work presented to dela with the inevitable need for traffic shaping and prioritiation may include one or more of the following detrimental
+
+- 1. Whitelist for IP address to prioritize
     - (+) simple
     - (-) not scalable
 
@@ -113,6 +118,10 @@ RFC 3270 defines how to support the Diffserv architecture in MPLS networks, incl
 Addition of ECN to IP [RFC3168] paved the way for much  optimization in managing queues based on these marking. RFC 6040 descibes the problems related to obscured original ECN markings in tunneled traffic. It proposes a standard for tunnels to propagate an extra level of congestion severity.
     - (+) Existing stanadrds exists
     - (-) complicated for nested tunnels 
+
+- 5. Flow labelling or classification for traffic steering
+     - (+) scope of applying artifically intelligent machine learning  models
+     - (-) can compromise privacy
 
 # Proposal to standardise the selection algorithm
 
@@ -135,22 +144,23 @@ A suggestive, non-exhaustive list of input datapoints for the algorithm :
 5. Time sensitivity of data : Many drafts and proposals reserve networ resources or prioritze critical support traffic such as E911. While the time sensitivity is subjected to application's decision and a machine learning models can be supervised to classify imposters, the proposed algorithm does not suggest a way to compute this value itself.   
 6. carbon footprint is an optional data point that may be added to algorithim. The data for the carbon footprint can be based on multiple factors which may include Datacenter's carbon footprint, energy grid's instantenous carbon footprint for fuel mix, sender's application or network provider's carbon footprint among other options.
 7. Cost or available credits
+
+![image](images/Algorithm-Altanai.jpg)
   
 Prior work that standardized algorithms for networking include 
-- Happy Eyeballs [RFC6555, RFC8305,]  algorithm for dual-stack hosts
+- Happy Eyeballs [RFC6555, RFC8305]  algorithm for dual-stack hosts
 
 ## Design goals 
 
 Application do not need to understand Failover Groups with multiple uplinks.
-Avoid strict priority ordering of multiple paths
+Avoid strict priority ordering of multiple paths.
 Avoid static scheduling algorithms such as weighted round robin which do not benifit mnay usecases such as low latency path for time-sensitive data. 
 Other indirect impacts of the algorithm may also be to overcome strategies which unfairly maximize bandwidth usage in the public internet. 
 
-## Algorithm Requirements
+## Algorithm's Requirements
 
 The algorithm has primary goal of optimization the network path for the traffic stream for achieving the best result in terms of fairness and criticality. 
 This algorithm must be implemented on a stateful system where the sender can make decisions on the path to be traversed. 
-
 
 The algorithm requires prior categorization pf paths such as uplinks based on their characteristics as type and bandwidth for example ethernet/10 megabit per second or cellular/5 megabit per second. The algorithm also requires available tunneling protocols for data transfer such as GRE, L2P, IPSec, OpenVPN and even propertiary protocols such as AutoVPN as avaiable.
 
@@ -182,19 +192,17 @@ The proposed path selection algorithm is only tasked with suggesting the protoco
  
 Examples of the decision that may be taken by the standardized algorithm could include:
 - Example 1 : Resource intensive ultra low latency application benefit from direct internet connection such as multiplayer games and if the algorithm's path suggestion doesn't meet the latency target the application can select its own path.
-![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/f3cf42c7-5ec8-4b15-8aa3-dfc62f29c8e9)
+![image](images/Example1-Altanai.jpg)
 
 - Example 2 :  VoIP signaling traffic in case of E911 benefit from direct non-tunneled setup such as shown below. Additionally the media could be shared on WebRTC’s SRTP/DTLS format which creates a peer-to-peer path to tunnel media traffic.
-![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/4b0eadc2-b69d-41fb-87a4-cf9273e2d4b2)
+![image](images/Example2-Altanai.jpg)
   
 - Example 3 : SIP trunk calls may actually benefit from a dedicated IPSec tunnel, pre NATed, pre authenticated and secure, as it would avoid the delay in resetting the path given the volume of calls expected between two endpoints.
-![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/9b327db9-15a7-4e6f-ac82-de4f50141485)
-
+![image](images/Example3-Altanai.jpg)
  
 - Example 4 : Heavy file downloads such as VoD could benefit by load sharing between multiple tunnels.
-![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/8f1e1a60-54d9-4027-9500-462d4d69e6ca)
+![image](images/Example4-Altanai.jpg)
 
- 
 - Example 5 : Management Information Base(MiB) for Internet Small Computer System Interface (iSCSI) can be sent over IpSec Tunnel for longer haul networks such as accross datacentres.
 
 ### Edge cases 
@@ -207,12 +215,12 @@ Examples of the decision that may be taken by the standardized algorithm could i
 {::boilerplate bcp14-tagged}
 
 
-# Security Considerations
+# Security Considerations {#security}
 
 TODO Security
 
 
-# IANA Considerations
+# IANA Considerations {#iana}
 
 This document has no IANA actions.
 
