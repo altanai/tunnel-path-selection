@@ -14,6 +14,7 @@ workgroup: "Transport Area"
 keyword:
  - MASQUE
  - VPN
+ - IPSec
  - Network Tunnelling protocols
 venue:
   group: "Transport Area"
@@ -64,66 +65,67 @@ QUIC has set MTU size limits and UDP in contrast has a large limit. As opposed t
 ## Increased Latency
 Considering limited bandwidth, with the overhead involved with nested tunnels and path selection the time sensitive streams are impacted.
 
-## Conflicting congestion control 
+## Multilevel congestion control 
 There are potential issues of 
 The inner tunnel carrying multiplexed streams may imply congestion control assuming it contesting with competeing traffic. However in reality could be one of the multiplxed streams. Alternatively even in a standalone tunnel the the individual streams may experience delay in RTT due to queuing in the tunnel's buffers and thus assume competeing traffic and congestion control or rate optimization algorithm could kick in. 
 
-## Conflicting prioritization 
-
+## Prioritization 
 Mainstream techniques such as packet marking( DSCP, ECN so on ) and queuing of other non-critical traffic (Fq-CODEL, CAKE AQM) to optimize for realtime streams is essentially prioritization in practice. However, VPN providers, CSPs and/or ISP may employ polar-opposite algorithms to shape traffic based on their interest which could lead to  an overall non-synchronized approach, where a stream is prioritized in some networks and deprioritized in other networks. 
 ![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/884803aa-fa1a-4511-a5b1-c37ca1295013)
 
-The VPN can be considered a limited premium network that protects confidential information of an organization such as business communication between retail stores.
 
-Hybrid work and move towards private access has increased the interest in tunneling traffic between endpoints. However at present, the traffic steering decision is made in a limited scoped or rule based manner which is different for various networks and service providers. Instead an alternative dynamic strategy is proposed which gauges the confidence in the various available options dynamically and may choose to send data directly via edge gateway, use one or more of the available tunnels or create a new on-demand tunnel, leveraging any of the tunneling protocols best suited.  
+## Past proposals for prioritiztion or path selection
+detrimental
+Some prior work presented to IETF with the inevitable need for traffic shaping and prioritiation may include one or more of the following 
 
 At present, in the case of multiple active uplinks connecting to various ISPs, there are multiple techniques to steer or prioritize traffic across the network[https://datatracker.ietf.org/doc/draft-ietf-intarea-tunnels/], which may include, 
 
-### 1: Full or Split tunnel based on DSCP tags( Diffserv). 
-For example in case of dual uplinks connected and two tunnels active, use the one more with better performance for RTP traffic. 
-
+### 1: Full or Split tunnel based on Diff Serv via Differentiated Services Code Point (DSCP)
+RFC 3270 defines how to support the Diffserv architecture in MPLS networks, including how to encode DSCP in an MPLS header. Application priorities even though using the same protocol have also been used to mark the packets differently such as DSCP Packet Markings for WebRTC QoS [RFC8807].
+An example of path selection based on prioritiztion is that in case of dual uplinks available hosting an active tunnel tunnel each, use the one more with better performance for RTP since that is more prirotized over FTP data. 
+    - (+) widely adopted
+    - (-) Unreliable in some cases and network operator may choose not to honor markings 
+    - (-) coarse grained classification 
+    
 ### 2: Multiple Active VPN Uplinks used in weighted round robin order or ECMP 
-Traffic Shaping generic rules based on QoS ( such as MOS, jitter other customized score), attributes such as app type or address or even client identifier such as mac address based shaping. 
-
+Traffic Shaping generic rules can be based on QoS such as MOS, loss, latency, jitter, usage history, throughput on all VPN sessions or other customized score. Attributes such as app type, address or even client identifier such as mac address can be used to balace load accross available options.  
+    - (+) fair by design
+    - (-) can lead to detrimental user experience 
+    
 ### 3. Policy-Based routing that use flow preferences to pin traffic to a particular path
-It is common for device or network policies to manage network flows. At the device level these policies may prioritize some packets over others to avoid queing delay.
-It could also be Geo or proximity based rules
-
-### 4. Dynamic Path Selection with application identification 
-The aplication knows its type and can directly feed the information to the algorithm. If the sender is not aware of the application it can attempt to obtain this information from intelligent ML models as Network Based Application Recognition (NBAR) from Cisco or even rely on Explicitly identifying Provisioning Domain Names through a Router Advertisement (RA) option. Discovering Provisioning Domain Names and Data, its architecture involving the authenticatio and trust model has been decribed in prior work [RFC8801, RFC7556] 
-
-### 5. MASQUE (QUIC multiplexing) for all Web trafic.
-
-
-
-![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/198f4b91-c18b-4326-8e17-09372a5edb87)
-
-## Past proposals for prioritiztion 
-
-Some prior work presented to dela with the inevitable need for traffic shaping and prioritiation may include one or more of the following detrimental
-
-- 1. Whitelist for IP address to prioritize
+It is common for device or network policy to manage network flows such as bandwidth allocation or rate limiting, Geo or proximity based rules. At the device level these policies may prioritize some packets over others to avoid queing delay. Modern hybrid deployments employ many uplinks with a varity of traffic shaping policies which can be adjusted dynmaically not only based on Qos but also on hop-by-hop insights from network, tracking uplink's utilization, uptime, failure or outages.
     - (+) simple
     - (-) not scalable
 
-- 2. Entropy headers
-Entropy headers are extension to traditional packet header that include information about the randomness of the packet's payload. These help distributing traffic more evenly in a multipath network, mitigating the risk of hotspots and potential congestion points.
+### 4. Dynamic Path Selection with application or domain identification 
+The aplication knows its type and can directly feed the information to the algorithm. If the sender is not aware of the application it can attempt to obtain this information from intelligent ML models as Network Based Application Recognition (NBAR) from Cisco. Models exist that can suggest bottlenecks for a traffic type on a path by analysising patterns.
+Dynamic path selection can even rely on explicitly identifying Provisioning Domain Names through a Router Advertisement (RA) option. Discovering Provisioning Domain Names and Data, its architecture involving the authenticatio and trust model has been decribed in prior work [RFC8801, RFC7556] 
 
-- 3. Diff Serv via Differentiated Services Code Point (DSCP) 
-RFC 3270 defines how to support the Diffserv architecture in MPLS networks, including how to encode DSCP in an MPLS header. Application priorities even though using the same protocol have also been used to mark the packets differently such as DSCP PAcket Markings for WebRTC QoS [RFC8807].
-    - (+) widely adopted
-    - (-) Unreliable in some cases 
-   
-- 4. Tunnelling of Explicit Congestion Notification(ECN)
+### 5. MASQUE (QUIC multiplexing) for all Web trafic 
+![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/198f4b91-c18b-4326-8e17-09372a5edb87)
+    - (+) handles both reliable and unreliable data
+    - (-) not suited for non web based traffic
+
+### 6. Whitelist for IP address or tuples to prioritize
+    - (+) simple
+    - (-) not scalable
+
+### 7. Entropy headers
+Entropy headers are extension to traditional packet header that include information about the randomness of the packet's payload. These help distributing traffic more evenly in a multipath network, mitigating the risk of hotspots and potential congestion points.
+    - (+) by making these headers non-updatable they can be safe from in-path modification
+    - (-) can be a privacy concern
+    
+### 8. Tunnelling of Explicit Congestion Notification(ECN)
 Addition of ECN to IP [RFC3168] paved the way for much  optimization in managing queues based on these marking. RFC 6040 descibes the problems related to obscured original ECN markings in tunneled traffic. It proposes a standard for tunnels to propagate an extra level of congestion severity.
     - (+) Existing stanadrds exists
     - (-) complicated for nested tunnels 
 
-- 5. Flow labelling or classification for traffic steering
+### 8. Flow labelling or classification for traffic steering
      - (+) scope of applying artifically intelligent machine learning  models
      - (-) can compromise privacy
 
 # Proposal to standardise the selection algorithm
+The VPN can be considered a limited premium network that protects confidential information of an organization such as business communication between retail stores. Hybrid work and move towards private access has increased the interest in tunneling traffic between endpoints. However at present, the traffic steering decision is made in a limited scoped or rule based manner which is different for various networks and service providers. Instead an alternative dynamic strategy is proposed which gauges the confidence in the various available options dynamically and may choose to send data directly via edge gateway, use one or more of the available tunnels or create a new on-demand tunnel, leveraging any of the tunneling protocols best suited.  
 
 By dynamically deciding the tunnel type for a stream or packet, we could avoid the non-performing or counter-productive use-cases such as 
 * added latency on real time streaming 
