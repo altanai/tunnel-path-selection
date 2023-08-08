@@ -218,9 +218,7 @@ Examples of the decision that may be taken by the standardized algorithm could i
 
 
 # Security Considerations {#security}
-
-TODO Security
-
+There are numerous performance issues related to over encryption and conflicting algorithms in the probelm space. While there is large scope for improvements in the draft, the main crux is to build a trust model between the tunneling layers that avoids the need for multiple layers of tunneling or cryptographic protocols.
 
 # IANA Considerations {#iana}
 
