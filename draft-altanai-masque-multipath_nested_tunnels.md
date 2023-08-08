@@ -47,40 +47,50 @@ This document identifies the real world problem of choosing a path when among si
 A path for sending data across a network can consist of a combination of many factors such as uplink, application layer protocol, tunneling protocol among others. For example TLS  operates above the network layer, SSH and Secure Real-time Transport Protocol (SRTP) [RFC 5764] operates at the application layer to carry data. Stream Control Transmission Protocol (SCTP), intended to tunnel signaling messages over IP networks, can encapsulate data as well. Tunneling can build a secure interconnection called Virtual Private Network(VPN) that provides a private subnet to pass traffic between the tunneled endpoints. This setup caters to enterprises and small private home networks alike. The protocols for such network level tunneling may include GRE, L2P, IPSec, WireGuard, OpenVPN and even proprietary protocols such as AutoVPN or custom implementtion over DTLS. Now multiple proxied stream- and datagram-based flows are possible inside an HTTP connection through the MASQUE which is build on QUIC. However there may be real world use-cases where network tunnels could nest application tunnels, which leads to large overheads in latency and quality of data. 
 
 # Problem Statement
+
 Many network service providers create sharing and resiliency by making traffic to be split, load balanced across multiple uplinks or failover to standby when any of the exisitng uplinks fail. Many mordern implementations use traffic shaping policies based on the network metrics such as loss, latency. Others can  prioritize flows based on intelligent classification ML models. There are many application specific logic that improve the selection process and also encourage fairness however such system designs lacks reusability on both the control and data plane.
 
 ## Path discovery and resulting conflicts 
+
 Networking protocols use hole punching to setup a path between endpoints. In presence of multiple paths available between two endpoints , multiple tunnels may be formed for primary-standby or load sharing setup. However QUIC's path discovery to explore reacahble endpoints for MASQUE proxy there may be 
 
 ## Setup and tear down 
+
 Network level tunnels encrypt and encapsulate the payload (data send by client) in UDP with headers designed to route effectively within VPN core network towards the egree point. The treatment of traffic includes ACL checks as well as other IPM( intriusion prevention ) as per the policy or firewall rules.
 The VPN gateways can either load share or selectively choose best path to route the traffic through the avaiable tunnels or use split tunnel to selectively bypass the VPN core altogether. These VPN's are often stateless which identify the tunnels using 4 or 5 tupple mappings. 
 
 ## Processing overhead 
+
 Nested tunnels greatly impact the traffic quality often resulting in fragmentation and defragmentation, as well as computational overhead in multiple encapsulations which incrreases the processor workload.
 
 ## MTU and Fragmentation 
+
 QUIC has set MTU size limits and UDP in contrast has a large limit. As opposed to this a non-tunneled traffic has lesser MTU restrictions and thus saves up processing time on fragmentation and defragmentation. Prior work has been done on the subject such as MTU and fragmentation considerations for In-the-Network Tunneling [RFC4459] 
 
 ## Increased Latency
+
 Considering limited bandwidth, with the overhead involved with nested tunnels and path selection the time sensitive streams are impacted.
 
 ## Multilevel congestion control 
+
 There are potential issues of 
 The inner tunnel carrying multiplexed streams may imply congestion control assuming it contesting with competeing traffic. However in reality could be one of the multiplxed streams. Alternatively even in a standalone tunnel the the individual streams may experience delay in RTT due to queuing in the tunnel's buffers and thus assume competeing traffic and congestion control or rate optimization algorithm could kick in. 
 
 ## Prioritization 
+
 Mainstream techniques such as packet marking( DSCP, ECN so on ) and queuing of other non-critical traffic (Fq-CODEL, CAKE AQM) to optimize for realtime streams is essentially prioritization in practice. However, VPN providers, CSPs and/or ISP may employ polar-opposite algorithms to shape traffic based on their interest which could lead to  an overall non-synchronized approach, where a stream is prioritized in some networks and deprioritized in other networks. 
 ![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/884803aa-fa1a-4511-a5b1-c37ca1295013)
 
 
 ## Past proposals for prioritiztion or path selection
+
 detrimental
 Some prior work presented to IETF with the inevitable need for traffic shaping and prioritiation may include one or more of the following 
 
 At present, in the case of multiple active uplinks connecting to various ISPs, there are multiple techniques to steer or prioritize traffic across the network[https://datatracker.ietf.org/doc/draft-ietf-intarea-tunnels/], which may include, 
 
 ### 1: Full or Split tunnel based on Diff Serv via Differentiated Services Code Point (DSCP)
+
 RFC 3270 defines how to support the Diffserv architecture in MPLS networks, including how to encode DSCP in an MPLS header. Application priorities even though using the same protocol have also been used to mark the packets differently such as DSCP Packet Markings for WebRTC QoS [RFC8807].
 An example of path selection based on prioritiztion is that in case of dual uplinks available hosting an active tunnel tunnel each, use the one more with better performance for RTP since that is more prirotized over FTP data. 
     - (+) widely adopted
@@ -88,6 +98,7 @@ An example of path selection based on prioritiztion is that in case of dual upli
     - (-) coarse grained classification 
     
 ### 2: Multiple Active VPN Uplinks used in weighted round robin order or ECMP 
+
 Traffic Shaping generic rules can be based on QoS such as MOS, loss, latency, jitter, usage history, throughput on all VPN sessions or other customized score. Attributes such as app type, address or even client identifier such as mac address can be used to balace load accross available options.  
     - (+) fair by design
     - (-) can lead to detrimental user experience 
@@ -98,33 +109,40 @@ It is common for device or network policy to manage network flows such as bandwi
     - (-) not scalable
 
 ### 4. Dynamic Path Selection with application or domain identification 
+
 The aplication knows its type and can directly feed the information to the algorithm. If the sender is not aware of the application it can attempt to obtain this information from intelligent ML models as Network Based Application Recognition (NBAR) from Cisco. Models exist that can suggest bottlenecks for a traffic type on a path by analysising patterns.
 Dynamic path selection can even rely on explicitly identifying Provisioning Domain Names through a Router Advertisement (RA) option. Discovering Provisioning Domain Names and Data, its architecture involving the authenticatio and trust model has been decribed in prior work [RFC8801, RFC7556] 
 
 ### 5. MASQUE (QUIC multiplexing) for all Web trafic 
+
 ![image](https://github.com/altanai/multipath-nested-tunnels/assets/1989657/198f4b91-c18b-4326-8e17-09372a5edb87)
     - (+) handles both reliable and unreliable data
     - (-) not suited for non web based traffic
 
 ### 6. Whitelist for IP address or tuples to prioritize
+
     - (+) simple
     - (-) not scalable
 
 ### 7. Entropy headers
+
 Entropy headers are extension to traditional packet header that include information about the randomness of the packet's payload. These help distributing traffic more evenly in a multipath network, mitigating the risk of hotspots and potential congestion points.
     - (+) by making these headers non-updatable they can be safe from in-path modification
     - (-) can be a privacy concern
     
 ### 8. Tunnelling of Explicit Congestion Notification(ECN)
+
 Addition of ECN to IP [RFC3168] paved the way for much  optimization in managing queues based on these marking. RFC 6040 descibes the problems related to obscured original ECN markings in tunneled traffic. It proposes a standard for tunnels to propagate an extra level of congestion severity.
     - (+) Existing stanadrds exists
     - (-) complicated for nested tunnels 
 
 ### 8. Flow labelling or classification for traffic steering
+
      - (+) scope of applying artifically intelligent machine learning  models
      - (-) can compromise privacy
 
 # Proposal to standardise the selection algorithm
+
 The VPN can be considered a limited premium network that protects confidential information of an organization such as business communication between retail stores. Hybrid work and move towards private access has increased the interest in tunneling traffic between endpoints. However at present, the traffic steering decision is made in a limited scoped or rule based manner which is different for various networks and service providers. Instead an alternative dynamic strategy is proposed which gauges the confidence in the various available options dynamically and may choose to send data directly via edge gateway, use one or more of the available tunnels or create a new on-demand tunnel, leveraging any of the tunneling protocols best suited.  
 
 By dynamically deciding the tunnel type for a stream or packet, we could avoid the non-performing or counter-productive use-cases such as 
@@ -218,7 +236,8 @@ Examples of the decision that may be taken by the standardized algorithm could i
 
 
 # Security Considerations {#security}
-There are numerous performance issues related to over encryption and conflicting algorithms in the probelm space. While there is large scope for improvements in the draft, the main crux is to build a trust model between the tunneling layers that avoids the need for multiple layers of tunneling or cryptographic protocols.
+While there is large scope for improvements in the draft, the main crux is to build a trust model between the tunneling layers that avoids the need for multiple layers of tunneling or cryptographic protocols. The selection of split tunnel by the algorithm could make the traffic more vulnearble to security risk. For example in an enterprise VPN system, a aplit tunnel could mean bypasing the firewalls rules and other threast prevention logic. Split tunnel for a regular user could means vulnerabilty to pattern analysis by third parties such as ISP, government survior network admin.
+
 
 # IANA Considerations {#iana}
 
