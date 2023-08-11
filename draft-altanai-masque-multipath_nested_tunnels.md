@@ -48,7 +48,7 @@ A path for sending data across a network can consist of a combination of many fa
 
 # Problem Statement
 
-Many network service providers create sharing and resiliency by making traffic to be split, load balanced across multiple uplinks or failover to standby when any of the exisitng uplinks fail. Many mordern implementations use traffic shaping policies based on the network metrics such as loss, latency. Others can  prioritize flows based on intelligent classification ML models. There are many application specific logic that improve the selection process and also encourage fairness however such system designs lacks reusability on both the control and data plane.
+Many private network service providers create sharing and resiliency by making traffic to be split-tunnel or load balanced across multiple tunnels. For the high availability and meeting SLAs in event of an uplink’s tunnel down there is also a quick detection and failover to standby uplink’s tunnel. Many modern implementations use traffic shaping policies based on the network metrics such as loss, latency while others can  prioritize flows based on intelligent classification ML models. There are many application specific logic that improve the selection process and also encourage fairness however such system designs lack reusability on both the control and data plane. 
 
 ## Path discovery and resulting conflicts 
 
@@ -99,9 +99,8 @@ An example of path selection based on prioritiztion is that in case of dual upli
     
 ### 2: Multiple Active VPN Uplinks used in weighted round robin order or ECMP 
 
-Traffic Shaping generic rules can be based on QoS such as MOS, loss, latency, jitter, usage history, throughput on all VPN sessions or other customized score. Attributes such as app type, address or even client identifier such as mac address can be used to balace load accross available options.  
-    - (+) fair by design
-    - (-) can lead to detrimental user experience 
+In case of multiple Active VPN Uplinks available, multiple paths are available to a  destination which can be split tunneled, tunneled via different application or network layer or both such as nested tunneled.  With so many options generic traffic shaping rules are often applied which may be based on QoS such as MOS, loss, latency, jitter, usage history, throughput on all VPN sessions or any other customized score. Attributes such as app type, address or even client identifier such as mac address can also be used to balance load across available options.  Simple loop techniques such as Weighted Round Robin do not offer much granularity and can also result in misconfiguration or worse still creating a bottleneck. Other means of balancing the traffic across available paths are Equal-cost multi-path (ECMP)[RFC2992] which is fair by design and routes packets along multiple paths of equal cost but suffers from limited adaptability especially in sudden changes of network conditions and heterogeneous environments of unequal costs.
+Although it is tough to make a path selection algorithm which is ideal for balance, scalability as well optimized for all kinds of resource utilization, not having a common basis for path selection can not only lead to detrimental user experience but also undue strain on the network.
     
 ### 3. Policy-Based routing that use flow preferences to pin traffic to a particular path
 It is common for device or network policy to manage network flows such as bandwidth allocation or rate limiting, Geo or proximity based rules. At the device level these policies may prioritize some packets over others to avoid queing delay. Modern hybrid deployments employ many uplinks with a varity of traffic shaping policies which can be adjusted dynmaically not only based on Qos but also on hop-by-hop insights from network, tracking uplink's utilization, uptime, failure or outages.
@@ -172,10 +171,13 @@ Prior work that standardized algorithms for networking include
 
 ## Design goals 
 
-Application do not need to understand Failover Groups with multiple uplinks.
-Avoid strict priority ordering of multiple paths.
-Avoid static scheduling algorithms such as weighted round robin which do not benifit mnay usecases such as low latency path for time-sensitive data. 
-Other indirect impacts of the algorithm may also be to overcome strategies which unfairly maximize bandwidth usage in the public internet. 
+The goal of standardizing such a path selection algorithm is to enable the network devices including endpoints to make decisions independently when choosing path characteristics over others. An endpoint, for example,, can achieve different prioritization based on the application contained inside flows. At the network devices the decision can be propagated or the device can re-use the same decision making algorithms at its end with richer data points to make a more optimized decision.  
+The goals of this design are as follows :
+* Applications do not need to understand Failover Groups with multiple uplinks. 
+* Avoid strict priority ordering of multiple paths. 
+* Avoid static scheduling algorithms such as weighted round robin which do not benefit the majority of use cases such as low latency path for time-sensitive data. 
+* Other indirect impacts of the algorithm may also be to overcome strategies which unfairly maximize bandwidth usage in the public internet.
+
 
 ## Algorithm's Requirements
 
