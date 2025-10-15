@@ -1129,7 +1129,7 @@ While this document does not define new DSCP values, implementations should coor
 
 ## Conclusions {#conclusions}
 
-This document addresses the significant challenges posed by multipath tunnel selection in modern transport networks, particularly focusing on congestion control conflicts and ECN handling in nested tunneling scenarios. The key contributions and findings include:
+This document addresses the significant challenges posed by multipath tunnel selection in modern transport networks, particularly focusing on congestion control conflicts and ECN handling in multipath and nested tunneling scenarios. The standardized approach provides several advantages by delivering consistency through uniform path selection behavior across heterogeneous network environments, achieving optimized global performance by reducing congestion control conflicts. The algorithmic approach scales better than static configuration-based methods and also facilitates vendor interoperability across diverse network infrastructures.
 
 ### Technical Contributions
 
@@ -1139,22 +1139,10 @@ This document addresses the significant challenges posed by multipath tunnel sel
 
 3. **Transport Integration**: The algorithm considers transport-layer characteristics and avoids the multilevel congestion control conflicts that plague current ad-hoc approaches.
 
-### Implementation Benefits
-
-The standardized approach provides several advantages over current implementations:
-
-1. **Consistency**: Uniform path selection behavior across heterogeneous network environments
-2. **Performance**: Reduced congestion control conflicts and improved application performance
-3. **Scalability**: Algorithmic approach scales better than static configuration-based methods
-4. **Interoperability**: Standards-based approach enables vendor interoperability
 
 ### Deployment Considerations
 
-Successful deployment of this mechanism requires:
-
-1. **Gradual Adoption**: Incremental deployment strategies that maintain backward compatibility
-2. **Policy Integration**: Enterprise and regulatory policy frameworks that can override algorithmic decisions
-3. **Security Framework**: Comprehensive security controls addressing privacy and authentication concerns
+Successful deployment of this mechanism requires gradual adoption. Also requires enterprise and regulatory policy frameworks that can override algorithmic decisions such as controls addressing privacy and authentication concerns.
 
 ### Future Work
 
