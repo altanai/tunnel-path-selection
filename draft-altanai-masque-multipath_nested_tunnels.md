@@ -356,42 +356,42 @@ The congestion-aware multipath tunnel selection algorithm processes multiple inp
 4. **ECN Markings Ratio**: The percentage of packets marked with ECN Congestion Experienced (CE) bits, providing early congestion detection as per {{RFC9599}}.
 
 5. **UDP Options Enhanced Metrics**: Leveraging {{RFC9868}} Transport Options for UDP to enable real-time path characteristic discovery:
-   - **Real-time Path Probing**: UDP options carrying path quality metrics for immediate assessment without dedicated probe traffic
-   - **Congestion Control Compatibility Signaling**: Transport options indicating supported congestion control algorithms (BBR, CUBIC, etc.) and ECN capabilities
-   - **Authentication Status**: AUTH option validation confirming tunnel endpoint authenticity and preventing path manipulation attacks
+   - Real-time Path Probing: UDP options carrying path quality metrics for immediate assessment without dedicated probe traffic
+   - Congestion Control Compatibility Signaling: Transport options indicating supported congestion control algorithms (BBR, CUBIC, etc.) and ECN capabilities
+   - Authentication Status: AUTH option validation confirming tunnel endpoint authenticity and preventing path manipulation attacks
 
 ### Path Characteristics and Historical Performance
 
 6. **Enhanced Tunnel Overhead Calculations**: Leveraging {{RFC9868}} UDP options for precise overhead assessment:
-   - **Base Protocol Overhead**: Static overhead from tunneling protocols (IPsec, MASQUE, WireGuard, etc.)
-   - **Dynamic UDP Options Overhead**: Additional bytes from {{RFC9868}} transport options based on active feature set
-   - **Fragmentation Impact Assessment**: Real-time evaluation of fragmentation probability using UDP options for Path MTU Discovery (DPLPMTUD)
-   - **Processing Overhead Metrics**: CPU and memory costs for UDP option parsing and generation at tunnel endpoints
+   - Base Protocol Overhead: Static overhead from tunneling protocols (IPsec, MASQUE, WireGuard, etc.)
+   - Dynamic UDP Options Overhead: Additional bytes from {{RFC9868}} transport options based on active feature set
+   - Fragmentation Impact Assessment: Real-time evaluation of fragmentation probability using UDP options for Path MTU Discovery (DPLPMTUD)
+   - Processing Overhead Metrics: CPU and memory costs for UDP option parsing and generation at tunnel endpoints
 
 7. **Path MTU Discovery Enhanced**: {{RFC9868}} DPLPMTUD support enabling:
-   - **Adaptive MTU Sizing**: Dynamic adjustment based on observed fragmentation
-   - **Multi-layer MTU Coordination**: Coordinated MTU discovery across nested tunnel layers
-   - **Fragmentation Avoidance**: Proactive path selection to minimize fragmentation overhead
+   - Adaptive MTU Sizing: Dynamic adjustment based on observed fragmentation
+   - Multi-layer MTU Coordination: Coordinated MTU discovery across nested tunnel layers
+   - Fragmentation Avoidance: Proactive path selection to minimize fragmentation overhead
 
 8. **Advanced Congestion Control Compatibility Assessment**: {{RFC9868}} enhanced evaluation including:
-   - **Transport Option Negotiation**: Capability discovery for congestion control algorithms through UDP options
-   - **ECN Propagation Verification**: Active testing of ECN handling across tunnel layers using authenticated transport options
-   - **Congestion Control Interference Detection**: Identification of nested congestion control conflicts through option-based signaling
-   - **Algorithm Compatibility Matrix**: Real-time assessment of congestion control algorithm effectiveness on each path
+   - Transport Option Negotiation: Capability discovery for congestion control algorithms through UDP options
+   - ECN Propagation Verification: Active testing of ECN handling across tunnel layers using authenticated transport options
+   - Congestion Control Interference Detection: Identification of nested congestion control conflicts through option-based signaling
+   - Algorithm Compatibility Matrix: Real-time assessment of congestion control algorithm effectiveness on each path
 
 9. **Historical Performance Database**: Time-series data including:
    - Average throughput over different time periods (hourly, daily, weekly)
    - Failure frequency and duration statistics
    - Congestion pattern analysis
    - Peak usage periods and capacity utilization trends
-   - **UDP Options Performance History**: {{RFC9868}} specific metrics including option parsing latency, authentication success rates, and DPLPMTUD effectiveness
+   - UDP Options Performance History: {{RFC9868}} specific metrics including option parsing latency, authentication success rates, and DPLPMTUD effectiveness
 
 10. **Predictive Performance Indicators**: 
    - Projected path quality based on historical patterns
    - Anticipated congestion windows based on time-of-day patterns
    - Failure probability predictions based on infrastructure health
    - Expected performance degradation under various load conditions
-   - **Real-time Path Quality Prediction**: ML models incorporating UDP options data for immediate path characteristic forecasting
+   - Real-time Path Quality Prediction: ML models path characteristic forecasting
 
 ### Network State Information
 
@@ -402,9 +402,9 @@ The congestion-aware multipath tunnel selection algorithm processes multiple inp
 13. **NQB Traffic Classification**: Identification of Non-Queue-Building traffic that requires special handling as per TSVWG NQB PHB specifications.
 
 14. **UDP Options Network Discovery**: {{RFC9868}} enhanced network state assessment:
-    - **Real-time Path Characteristic Discovery**: Active measurement of path properties using UDP options without additional probe traffic
-    - **Transport Capability Negotiation**: Dynamic discovery of network and endpoint transport feature support through option exchange
-    - **Security Policy Enforcement**: Authenticated path validation using AUTH options to prevent path spoofing and ensure policy compliance
+    - Real-time Path Characteristic Discovery: Active measurement of path properties using UDP options without additional probe traffic
+    - Transport Capability Negotiation: Dynamic discovery of network and endpoint transport feature support through option exchange
+    - Security Policy Enforcement: Authenticated path validation using AUTH options to prevent path spoofing and ensure policy compliance
 
 ### Operational Requirements and Constraints
 
