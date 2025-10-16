@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>altanai/tunnel-path-selection main preview</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <style type="text/css">/*<![CDATA[*/
+      body { font-family: "Helvetica Neue","Open Sans", Helvetica, Calibri,sans-serif; }
+      h1, h2, td { font-family: "Helvetica Neue", "Roboto Condensed", "Open Sans", Helvetica, Calibri, sans-serif; }
+      h1 { font-size: 20px; } h2 { font-size: 16px; }
+      table { margin: 5px 10px; border-collapse: collapse; }
+      th, td { font-weight: normal; text-align: left; padding: 2px 5px; }
+      a:link { color: #000; } a:visited { color: #00a; }
+    /*]]>*/</style>
+  </head>
+  <body>
+    <h1>Editor's drafts for main branch of <a href="https://github.com/altanai/tunnel-path-selection">altanai/tunnel-path-selection</a></h1>
+    <p>View <a href="issues.html">saved issues</a>, or the latest GitHub <a href="https://github.com/altanai/tunnel-path-selection/issues">issues</a> and <a href="https://github.com/altanai/tunnel-path-selection/pulls">pull requests</a> in the <a href="https://github.com/altanai/tunnel-path-selection">repo</a>.</p>
+    <table id="branch-main">
+      <tr>
+        <td><a href="./draft-altanai-tsv-multipath_nested_tunnels.html" class="html draft-altanai-tsv-multipath_nested_tunnels" title="Congestion-Aware Multipath Tunnel Selection for Transport Services (HTML)">Multipath Tunnel Selection</a></td>
+        <td><a href="./draft-altanai-tsv-multipath_nested_tunnels.txt" class="txt draft-altanai-tsv-multipath_nested_tunnels" title="Congestion-Aware Multipath Tunnel Selection for Transport Services (Text)">plain text</a></td>
+        <td><a href="https://datatracker.ietf.org/doc/draft-altanai-tsv-multipath_nested_tunnels" class="dt draft-altanai-tsv-multipath_nested_tunnels" title="Datatracker for draft-altanai-tsv-multipath_nested_tunnels">datatracker</a></td>
+        <td><a href="https://author-tools.ietf.org/api/iddiff?doc_1=draft-altanai-tsv-multipath_nested_tunnels&amp;url_2=https://altanai.github.io/tunnel-path-selection/draft-altanai-tsv-multipath_nested_tunnels.txt" class="diff draft-altanai-tsv-multipath_nested_tunnels">diff with last submission</a></td>
+        <td></td>
+      </tr>
+    </table>
+    <script>
+window.onload = function() {
+  var referrer_branch = 'main';
+  // e.g., "https://github.com/user/repo/tree/main"
+  var chunks = document.referrer.split("/");
+  if (chunks[2] === 'github.com' && chunks[5] === 'tree') {
+    referrer_branch = chunks[6];
+  }
+  let branch = document.querySelector('#branch-' + referrer_branch);
+  let h = document.location.hash.substring(1);
+  if (h === 'show') {
+    document.location.hash = '#' + branch.id;
+  } else if (branch && h.startsWith('go')) {
+    let e = branch.querySelector(h.substring(2));
+    if (e && e.href) {
+      document.location = e.href;
+    }
+  }
+};
+    </script>
+  </body>
+</html>
