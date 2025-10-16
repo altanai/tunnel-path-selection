@@ -3,7 +3,7 @@ title: "Congestion-Aware Multipath Tunnel Selection for Transport Services"
 abbrev: "Multipath Tunnel Selection"
 category: std
 
-docname: draft-altanai-tsv-multipath_nested_tunnels-00
+docname: draft-altanai-tsv-multipath_nested_tunnels-latest
 submissiontype: IETF
 number:
 date: 2025-10-14
@@ -277,7 +277,7 @@ This integrated approach to congestion management represents a significant advan
 ### Prioritization
 
 Mainstream techniques such as packet marking( DSCP, ECN so on ) and queuing of other non-critical traffic (Fq-CODEL, CAKE AQM) to optimize for realtime streams is essentially prioritization in practice. However, VPN providers, CSPs and/or ISP may employ polar-opposite algorithms to shape traffic based on their interest which could lead to  an overall non-synchronized approach, where a stream is prioritized in some networks and deprioritized in other networks.
-![Prioritization across networks](images/prioritization-networks.png)
+[Diagram: Prioritization across networks - shows how different networks may prioritize the same traffic differently]
 
 
 ## Limited scope of past proposals for prioritiztion or path selection
@@ -311,7 +311,7 @@ Dynamic path selection can even rely on explicitly identifying Provisioning Doma
 
 ### 5. MASQUE (QUIC multiplexing) for all Web trafic
 
-![MASQUE QUIC multiplexing](images/masque-quic-multiplexing.png)
+[Diagram: MASQUE QUIC multiplexing architecture showing stream multiplexing over HTTP/3]
 
 MASQUE provides the advantage of being able to handle both reliable and unreliable data streams efficiently through QUIC multiplexing, offering flexibility in transport protocol selection. However, this approach has the limitation of not being well-suited for non-web-based traffic, potentially requiring additional adaptations or alternative solutions for enterprise applications that do not follow web protocols.
 
@@ -524,7 +524,7 @@ Input:
 Output:
   - Selected_Path (p*)
   - Confidence_Score (0.0-1.0)
-  - Fallback_Paths ([p_fallback1, p_fallback2, ...])
+  - Fallback_Paths (list of p_fallback1, p_fallback2, etc.)
 
 Function: SelectOptimalTunnelPath(T, P, C, W)
 ```
@@ -883,7 +883,56 @@ algorithm_weights:
       - "availability < sla_requirement"
 ```
 
-![image](images/Algorithm-Altanai.jpg)
+[Figure: Algorithm flow diagram - shows the complete path selection algorithm decision flow]
+```
+Congestion-Aware Multipath Tunnel Selection Algorithm
+=====================================================
+
+Input Parameters                    Decision Making Algorithm                Output
+================                    ========================                ======
+
+Bandwidth ─────────────────────┐
+                               │
+Network State ─────────────────┤
+                               │    ┌─────────────────────────────────┐
+Vulnerability of data ─────────┤────┤                                 │
+                               │    │    Decision Making Algorithm    │    Algorithm's
+Time sensitivity of data ──────┤────┤                                 │──► Suggested
+                               │    │  ┌─────────────────────────────┐ │    Path
+Sample dataframe ──────────────┤────┤  │                             │ │
+                               │    │  │  ┌─ n random pkt selector   │ │
+Provisioning domains ──────────┤────┤  │  │                          │ │
+                               │    │  │  └─ ? other process         │ │
+Criticality ───────────────────┤────┤  │     components              │ │
+                               │    │  │                             │ │
+Carbon footprint ──────────────┤────┤  └─────────────────────────────┘ │
+                               │    │                                 │
+Cost/available credits ────────┘    └─────────────────────────────────┘
+                                               │
+                                               ▼
+                                    Available Path Options
+                                    ======================
+                                               │
+                        ┌──────────────────────┼──────────────────────┐
+                        │                      │                      │
+                    ┌───▼───┐              ┌───▼───┐              ┌───▼───┐
+                    │UPLINK │              │TUNNEL │              │ ETC   │
+                    └───┬───┘              └───┬───┘              └───────┘
+                        │                      │
+              ┌─────────┼─────────┐           │
+              │         │         │           │
+          ┌───▼───┐ ┌───▼───┐ ┌───▼───┐   ┌───▼───┐
+          │Ethernet│ │Fibre  │ │Cellular│   │MASQUE │
+          └───────┘ └───────┘ └───────┘   └───┬───┘
+                                              │
+                                    ┌─────────┼─────────┐
+                                    │         │         │
+                                ┌───▼───┐ ┌───▼───┐ ┌───▼───┐
+                                │Network│ │Direct/│ │  ...  │
+                                │Tunnel │ │Split  │ │       │
+                                │       │ │Tunnel │ │       │
+                                └───────┘ └───────┘ └───────┘
+```
 
 Prior work that standardized algorithms for networking include:
 
@@ -954,16 +1003,155 @@ The proposed path selection algorithm is only tasked with suggesting the protoco
 
 Examples of the decision that may be taken by the standardized algorithm could include:
 - Example 1 : Resource intensive ultra low latency application benefit from direct internet connection such as multiplayer games and if the algorithm's path suggestion doesn't meet the latency target the application can select its own path.
-![image](images/Example1-Altanai.jpg)
+```
+Example 1: Multiplayer Games - Ultra Low Latency Path Selection
+==============================================================
+
+Input Parameters (Gaming Scenario)     Selection Algorithm              Output Decision
+===================================     ===================              ===============
+
+Bandwidth: 100Mbps ─────────────────┐
+                                    │
+Network State: ────────────────────┐│
+  • 0.1 loss                       ││   ┌─────────────────────────────┐
+  • 0.2 jitter                     ││   │                             │
+                                   ┌┴┴───┤    Selection Algorithm      │    Direct Traffic
+Vulnerability of data: 0.9 ────────┤     │                             │──► on Ethernet
+                                   │     │  Gaming Traffic Detected:   │    (Ultra Low
+Time sensitivity: GAMES ───────────┤─────┤  • High time sensitivity    │     Latency)
+                                   │     │  • Low vulnerability OK     │
+Provisioning domains: 0.5 ─────────┤     │  • Adequate bandwidth       │
+                                   │     │  • Direct path preferred    │
+Criticality: 0.7 ──────────────────┤     │                             │
+                                   │     └─────────────────────────────┘
+Carbon footprint: null ────────────┤                   │
+                                   │                   │
+Cost/available credits: unlimited ──┘                   ▼
+                                              Path Selection Logic
+                                              ===================
+                                                       │
+                                    ┌──────────────────┼──────────────────┐
+                                    │                  │                  │
+                                ┌───▼───┐          ┌───▼───┐          ┌───▼───┐
+                                │UPLINK │          │TUNNEL │          │OTHER  │
+                                │       │          │       │          │       │
+                                └───┬───┘          └───┬───┘          └───────┘
+                                    │                  │
+                          ┌─────────┼─────────┐       │
+                          │         │         │       │
+                      ┌───▼───┐ ┌───▼───┐ ┌───▼───┐   │
+                      │Broad- │ │Ether- │ │Cellular│   │
+                      │ band  │ │ net   │ │        │   │
+                      └───────┘ └───█───┘ └───────┘   │
+                                     │                │
+                                  SELECTED            │
+                                                      │
+                                              ┌───────┼───────┐
+                                              │       │       │
+                                          ┌───▼───┐ ┌─▼─┐ ┌───▼───┐
+                                          │MASQUE │ │N/T│ │Direct/│
+                                          │       │ │   │ │Split  │
+                                          └───────┘ └───┘ └───────┘
+                                                           NOT USED
+                                                          (Too high
+                                                           latency)
+
+Decision Rationale:
+==================
+✓ Gaming traffic requires ultra-low latency
+✓ Vulnerability score (0.9) acceptable for gaming data
+✓ Direct ethernet provides lowest latency path
+✓ No tunneling overhead needed for multiplayer games
+✓ Cost not a factor (unlimited credits)
+✗ Tunneling rejected due to added latency
+```
 
 - Example 2 :  VoIP signaling traffic in case of E911 benefit from direct non-tunneled setup such as shown below. Additionally the media could be shared on WebRTC’s SRTP/DTLS format which creates a peer-to-peer path to tunnel media traffic.
-![image](images/Example2-Altanai.jpg)
+[Figure 2: Example 2 - VoIP E911 direct signaling with WebRTC P2P media path]
 
 - Example 3 : SIP trunk calls may actually benefit from a dedicated IPSec tunnel, pre NATed, pre authenticated and secure, as it would avoid the delay in resetting the path given the volume of calls expected between two endpoints.
-![image](images/Example3-Altanai.jpg)
+[Figure 3: Example 3 - SIP trunk calls over dedicated IPSec tunnel]
 
 - Example 4 : Heavy file downloads such as VoD could benefit by load sharing between multiple tunnels.
-![image](images/Example4-Altanai.jpg)
+```
+Example 4: Media Streaming using CDN - Load Sharing Across Multiple Tunnels
+===========================================================================
+
+Input Parameters (VoD/Streaming)       Selection Algorithm              Output Decision
+====================================    ===================              ===============
+
+Bandwidth: 100Mbps ─────────────────┐
+                                    │
+Network State: ────────────────────┐│
+  • 0.1 jitter                     ││   ┌─────────────────────────────┐
+  • 60ms RTT                       ││   │                             │
+  • 0.3 loss                       ┌┴┴───┤    Selection Algorithm      │    MASQUE
+                                   │     │                             │──► Multi-tunnel
+Vulnerability of data: 0.8 ────────┤     │  Media Streaming Detected:  │    Load Sharing
+                                   │     │  • Bulk transfer suitable   │
+Time sensitivity: 0.5 ─────────────┤─────┤  • High bandwidth needed    │
+                                   │     │  • Load sharing beneficial  │
+Provisioning domains: VoIP ────────┤     │  • Multiple paths optimal   │
+                                   │     │                             │
+Criticality: 0.4 ──────────────────┤     └─────────────────────────────┘
+                                   │                   │
+Carbon footprint: 0.5 ─────────────┤                   │
+                                   │                   ▼
+Cost/available credits: 0.8 ───────┘           Path Selection Logic
+                                              ===================
+                                                       │
+                                    ┌──────────────────┼──────────────────┐
+                                    │                  │                  │
+                                ┌───▼───┐          ┌───▼───┐          ┌───▼───┐
+                                │UPLINK │          │TUNNEL │          │OTHER  │
+                                │       │          │       │          │       │
+                                └───┬───┘          └───█───┘          └───────┘
+                                    │                  │
+                          ┌─────────┼─────────┐       │ SELECTED
+                          │         │         │       │
+                      ┌───▼───┐ ┌───▼───┐ ┌───▼───┐   │
+                      │Broad- │ │Ether- │ │Cellular│   │
+                      │ band  │ │ net   │ │        │   │
+                      └───█───┘ └───█───┘ └───█───┘   │
+                           │        │        │        │
+                        ALL USED FOR LOAD SHARING     │
+                                                      │
+                                              ┌───────┼───────┐
+                                              │       │       │
+                                          ┌───▼───┐ ┌─▼─┐ ┌───▼───┐
+                                          │MASQUE │ │N/T│ │Direct/│
+                                          │ ████  │ │   │ │Split  │
+                                          └───────┘ └───┘ └───────┘
+                                           SELECTED
+
+Load Sharing Strategy:
+=====================
+┌─────────────────────────────────────────────────────────────────┐
+│                    VoD Content Distribution                     │
+├─────────────────────────────────────────────────────────────────┤
+│  Broadband ──┐                                                 │
+│              ├──► MASQUE Tunnel 1 ──┐                          │
+│  Ethernet ───┤                      ├──► Combined VoD Stream   │
+│              ├──► MASQUE Tunnel 2 ──┤                          │
+│  Cellular ───┘                      └──► to CDN/Client         │
+│                                                                 │
+│  Benefits:                                                      │
+│  • Aggregate bandwidth from all paths                          │
+│  • Resilience against single path failure                      │
+│  • Optimal for large file transfers                            │
+│  • CDN-friendly multiplexed streams                            │
+└─────────────────────────────────────────────────────────────────┘
+
+Decision Rationale:
+==================
+✓ Large bandwidth requirement suits multi-path approach
+✓ Low time sensitivity (0.5) allows for tunnel overhead
+✓ MASQUE enables efficient stream multiplexing
+✓ Load sharing maximizes available bandwidth
+✓ Resilient to individual path degradation
+✓ Cost-effective use of multiple uplinks
+✗ Single direct path insufficient for VoD bandwidth needs
+```
 
 - Example 5 : Management Information Base(MiB) for Internet Small Computer System Interface (iSCSI) can be sent over IpSec Tunnel for longer haul networks such as accross datacentres.
 
@@ -1109,12 +1297,12 @@ Initial registry entries:
 
 | Metric ID | Metric Name | Description | Reference |
 |-----------|-------------|-------------|-----------|
-| 0x0001 | ECN-CE-Ratio | Percentage of ECN CE marked packets | [This Document] |
-| 0x0002 | RTT-Baseline | Baseline round-trip time measurement | [This Document] |
-| 0x0003 | RTT-Variance | RTT variation coefficient | [This Document] |
-| 0x0004 | Loss-Rate | Packet loss rate percentage | [This Document] |
-| 0x0005 | Tunnel-Overhead | Tunnel encapsulation overhead bytes | [This Document] |
-| 0x0006 | NQB-Classification | Non-Queue-Building traffic indicator | [This Document] |
+| 0x0001 | ECN-CE-Ratio | Percentage of ECN CE marked packets | This Document |
+| 0x0002 | RTT-Baseline | Baseline round-trip time measurement | This Document |
+| 0x0003 | RTT-Variance | RTT variation coefficient | This Document |
+| 0x0004 | Loss-Rate | Packet loss rate percentage | This Document |
+| 0x0005 | Tunnel-Overhead | Tunnel encapsulation overhead bytes | This Document |
+| 0x0006 | NQB-Classification | Non-Queue-Building traffic indicator | This Document |
 
 ### Updates to Existing Registries
 
