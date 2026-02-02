@@ -9,7 +9,7 @@
 <meta content="
        This document addresses the transport-layer challenges of path selection in environments with multiple available tunneling options and congestion control mechanisms. It identifies congestion control conflicts that arise from nested tunneling protocols and proposes a congestion-aware multipath tunnel selection algorithm that conforms to the guidelines established in   for adding congestion notification to protocols that encapsulate IP. The proposed approach considers Explicit Congestion Notification (ECN) propagation, transport protocol characteristics, and network conditions to optimize path selection while avoiding multilevel congestion control issues. This work aligns with current Transport and Services Working Group efforts on Non-Queue-Building (NQB) behaviors, careful congestion control resume, and multipath transport protocols. 
     " name="description">
-<meta content="xml2rfc 3.30.2" name="generator">
+<meta content="xml2rfc 3.31.0" name="generator">
 <meta content="MASQUE" name="keyword">
 <meta content="VPN" name="keyword">
 <meta content="IPSec" name="keyword">
@@ -17,23 +17,22 @@
 <meta content="ECN" name="keyword">
 <meta content="Multipath" name="keyword">
 <meta content="Transport Services" name="keyword">
-<meta content="draft-altanai-tsv-multipath_nested_tunnels-latest" name="ietf.draft">
+<meta content="draft-altanai-tsv-multipath-nested-tunnels-latest" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.30.2
-    Python 3.12.11
+  xml2rfc 3.31.0
+    Python 3.12.12
     ConfigArgParse 1.7
     google-i18n-address 3.1.1
-    intervaltree 3.1.0
+    intervaltree 3.2.1
     Jinja2 3.1.6
-    lxml 5.3.1
-    platformdirs 4.4.0
+    lxml 6.0.2
+    platformdirs 4.5.1
     pycountry 24.6.1
-    PyYAML 6.0.2
+    PyYAML 6.0.3
     requests 2.32.5
-    setuptools 80.9.0
-    wcwidth 0.2.14
+    wcwidth 0.3.0
 -->
-<link href="draft-altanai-tsv-multipath_nested_tunnels.xml" rel="alternate" type="application/rfc+xml">
+<link href="draft-altanai-tsv-multipath-nested-tunnels.xml" rel="alternate" type="application/rfc+xml">
 <link href="#copyright" rel="license">
 <style type="text/css">@font-face {
   font-family: 'Lora';
@@ -572,6 +571,7 @@ aside, blockquote {
 }
 blockquote {
   margin: 1em 0;
+  border-left: 2px var(--pilcrow-strong) solid;
 }
 cite {
   display: block;
@@ -642,7 +642,7 @@ a.pilcrow {
   }
 }
 @media not print {
-  :hover > a.pilcrow {
+  :hover > a.pilcrow, a.pilcrow:focus {
     opacity: 1;
   }
   a.pilcrow[href]:hover {
@@ -1064,7 +1064,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dt class="label-workgroup">Workgroup:</dt>
 <dd class="workgroup">tsvwg</dd>
 <dt class="label-internet-draft">Internet-Draft:</dt>
-<dd class="internet-draft">draft-altanai-tsv-multipath_nested_tunnels-latest</dd>
+<dd class="internet-draft">draft-altanai-tsv-multipath-nested-tunnels-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
 <time datetime="2025-10-14" class="published">14 October 2025</time>
@@ -1094,7 +1094,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <p id="section-note.1-1">This note is to be removed before publishing as an RFC.<a href="#section-note.1-1" class="pilcrow">¶</a></p>
 <p id="section-note.1-2">
         The latest revision of this draft can be found at <span><a href="https://altanai.github.io/multipath-nested-tunnels/draft-altanai-tsv-multipath_nested_tunnels.html">https://altanai.github.io/multipath-nested-tunnels/draft-altanai-tsv-multipath_nested_tunnels.html</a></span>.
-        Status information for this document may be found at <span><a href="https://datatracker.ietf.org/doc/draft-altanai-tsv-multipath_nested_tunnels/">https://datatracker.ietf.org/doc/draft-altanai-tsv-multipath_nested_tunnels/</a></span>.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
+        Status information for this document may be found at <span><a href="https://datatracker.ietf.org/doc/draft-altanai-tsv-multipath-nested-tunnels/">https://datatracker.ietf.org/doc/draft-altanai-tsv-multipath-nested-tunnels/</a></span>.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
 <p id="section-note.1-3">
         Discussion of this document takes place on the
         tsvwg WG mailing list (<span><a href="mailto:tsvwg@ietf.org">mailto:tsvwg@ietf.org</a></span>),
@@ -1158,63 +1158,58 @@ svg :is([fill="white"], [fill^="#fff"]) {
                 <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="auto internal xref">1.1</a>.  <a href="#name-fundamental-differences-tun" class="internal xref">Fundamental Differences: Tunneled vs Non-Tunneled Traffic Path Selection</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.2">
-                <p id="section-toc.1-1.1.2.2.1" class="keepWithNext"><a href="#section-1.2" class="auto internal xref">1.2</a>.  <a href="#name-current-path-selection-chal" class="internal xref">Current Path Selection Challenges</a></p>
+                <p id="section-toc.1-1.1.2.2.1"><a href="#section-1.2" class="auto internal xref">1.2</a>.  <a href="#name-current-path-selection-chal" class="internal xref">Current Path Selection Challenges</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.2.2.1">
                     <p id="section-toc.1-1.1.2.2.2.1.1" class="keepWithNext"><a href="#section-1.2.1" class="auto internal xref">1.2.1</a>.  <a href="#name-vendor-interoperability-cha" class="internal xref">Vendor Interoperability Challenges</a></p>
 </li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.2.2.2">
+                    <p id="section-toc.1-1.1.2.2.2.2.1" class="keepWithNext"><a href="#section-1.2.2" class="auto internal xref">1.2.2</a>.  <a href="#name-the-need-for-standardizatio" class="internal xref">The Need for Standardization</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.2.2.3">
+                    <p id="section-toc.1-1.1.2.2.2.3.1"><a href="#section-1.2.3" class="auto internal xref">1.2.3</a>.  <a href="#name-multilevel-congestion-contr" class="internal xref">Multilevel Congestion Control and ECN Propagation</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.2.2.4">
+                    <p id="section-toc.1-1.1.2.2.2.4.1"><a href="#section-1.2.4" class="auto internal xref">1.2.4</a>.  <a href="#name-prioritization" class="internal xref">Prioritization</a></p>
+</li>
                 </ul>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3">
-                <p id="section-toc.1-1.1.2.3.1"><a href="#section-1.3" class="auto internal xref">1.3</a>.  <a href="#name-the-need-for-standardizatio" class="internal xref">The Need for Standardization</a></p>
+                <p id="section-toc.1-1.1.2.3.1"><a href="#section-1.3" class="auto internal xref">1.3</a>.  <a href="#name-limited-scope-of-past-propo" class="internal xref">Limited scope of past proposals for prioritiztion or path selection</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.1">
-                    <p id="section-toc.1-1.1.2.3.2.1.1"><a href="#section-1.3.1" class="auto internal xref">1.3.1</a>.  <a href="#name-path-discovery-overhead-and" class="internal xref">Path discovery overhead and resulting conflicts</a></p>
+                    <p id="section-toc.1-1.1.2.3.2.1.1"><a href="#section-1.3.1" class="auto internal xref">1.3.1</a>.  <a href="#name-1-full-or-split-tunnel-base" class="internal xref">1: Full or Split tunnel based on Diff Serv via Differentiated Services Code Point (DSCP)</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.2">
-                    <p id="section-toc.1-1.1.2.3.2.2.1"><a href="#section-1.3.2" class="auto internal xref">1.3.2</a>.  <a href="#name-multilevel-congestion-contr" class="internal xref">Multilevel Congestion Control and ECN Propagation</a></p>
+                    <p id="section-toc.1-1.1.2.3.2.2.1"><a href="#section-1.3.2" class="auto internal xref">1.3.2</a>.  <a href="#name-2-multiple-active-vpn-uplin" class="internal xref">2: Multiple Active VPN Uplinks used in weighted round robin order or ECMP</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.3">
-                    <p id="section-toc.1-1.1.2.3.2.3.1"><a href="#section-1.3.3" class="auto internal xref">1.3.3</a>.  <a href="#name-prioritization" class="internal xref">Prioritization</a></p>
+                    <p id="section-toc.1-1.1.2.3.2.3.1"><a href="#section-1.3.3" class="auto internal xref">1.3.3</a>.  <a href="#name-3-policy-based-routing-that" class="internal xref">3. Policy-Based routing that use flow preferences to pin traffic to a particular path</a></p>
 </li>
-                </ul>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.4">
+                    <p id="section-toc.1-1.1.2.3.2.4.1"><a href="#section-1.3.4" class="auto internal xref">1.3.4</a>.  <a href="#name-4-dynamic-path-selection-wi" class="internal xref">4. Dynamic Path Selection with application or domain identification</a></p>
 </li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.4">
-                <p id="section-toc.1-1.1.2.4.1"><a href="#section-1.4" class="auto internal xref">1.4</a>.  <a href="#name-limited-scope-of-past-propo" class="internal xref">Limited scope of past proposals for prioritiztion or path selection</a></p>
-<ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.4.2.1">
-                    <p id="section-toc.1-1.1.2.4.2.1.1"><a href="#section-1.4.1" class="auto internal xref">1.4.1</a>.  <a href="#name-1-full-or-split-tunnel-base" class="internal xref">1: Full or Split tunnel based on Diff Serv via Differentiated Services Code Point (DSCP)</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.5">
+                    <p id="section-toc.1-1.1.2.3.2.5.1"><a href="#section-1.3.5" class="auto internal xref">1.3.5</a>.  <a href="#name-5-masque-quic-multiplexing-" class="internal xref">5. MASQUE (QUIC multiplexing) for all Web trafic</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.4.2.2">
-                    <p id="section-toc.1-1.1.2.4.2.2.1"><a href="#section-1.4.2" class="auto internal xref">1.4.2</a>.  <a href="#name-2-multiple-active-vpn-uplin" class="internal xref">2: Multiple Active VPN Uplinks used in weighted round robin order or ECMP</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.6">
+                    <p id="section-toc.1-1.1.2.3.2.6.1"><a href="#section-1.3.6" class="auto internal xref">1.3.6</a>.  <a href="#name-6-whitelist-for-ip-address-" class="internal xref">6. Whitelist for IP address or tuples to prioritize</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.4.2.3">
-                    <p id="section-toc.1-1.1.2.4.2.3.1"><a href="#section-1.4.3" class="auto internal xref">1.4.3</a>.  <a href="#name-3-policy-based-routing-that" class="internal xref">3. Policy-Based routing that use flow preferences to pin traffic to a particular path</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.7">
+                    <p id="section-toc.1-1.1.2.3.2.7.1"><a href="#section-1.3.7" class="auto internal xref">1.3.7</a>.  <a href="#name-7-entropy-headers" class="internal xref">7. Entropy headers</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.4.2.4">
-                    <p id="section-toc.1-1.1.2.4.2.4.1"><a href="#section-1.4.4" class="auto internal xref">1.4.4</a>.  <a href="#name-4-dynamic-path-selection-wi" class="internal xref">4. Dynamic Path Selection with application or domain identification</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.8">
+                    <p id="section-toc.1-1.1.2.3.2.8.1"><a href="#section-1.3.8" class="auto internal xref">1.3.8</a>.  <a href="#name-8-tunnelling-of-explicit-co" class="internal xref">8. Tunnelling of Explicit Congestion Notification(ECN)</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.4.2.5">
-                    <p id="section-toc.1-1.1.2.4.2.5.1"><a href="#section-1.4.5" class="auto internal xref">1.4.5</a>.  <a href="#name-5-masque-quic-multiplexing-" class="internal xref">5. MASQUE (QUIC multiplexing) for all Web trafic</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.4.2.6">
-                    <p id="section-toc.1-1.1.2.4.2.6.1"><a href="#section-1.4.6" class="auto internal xref">1.4.6</a>.  <a href="#name-6-whitelist-for-ip-address-" class="internal xref">6. Whitelist for IP address or tuples to prioritize</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.4.2.7">
-                    <p id="section-toc.1-1.1.2.4.2.7.1"><a href="#section-1.4.7" class="auto internal xref">1.4.7</a>.  <a href="#name-7-entropy-headers" class="internal xref">7. Entropy headers</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.4.2.8">
-                    <p id="section-toc.1-1.1.2.4.2.8.1"><a href="#section-1.4.8" class="auto internal xref">1.4.8</a>.  <a href="#name-8-tunnelling-of-explicit-co" class="internal xref">8. Tunnelling of Explicit Congestion Notification(ECN)</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.4.2.9">
-                    <p id="section-toc.1-1.1.2.4.2.9.1"><a href="#section-1.4.9" class="auto internal xref">1.4.9</a>.  <a href="#name-9-flow-labelling-or-classif" class="internal xref">9. Flow labelling or classification for traffic steering</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.9">
+                    <p id="section-toc.1-1.1.2.3.2.9.1"><a href="#section-1.3.9" class="auto internal xref">1.3.9</a>.  <a href="#name-9-flow-labelling-or-classif" class="internal xref">9. Flow labelling or classification for traffic steering</a></p>
 </li>
                 </ul>
 </li>
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
-            <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-proposal-to-standardise-the" class="internal xref">Proposal to standardise the selection algorithm</a></p>
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-proposal-to-standardize-the" class="internal xref">Proposal to standardize the selection algorithm</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1">
                 <p id="section-toc.1-1.2.2.1.1"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-algorithm-input-parameters" class="internal xref">Algorithm Input Parameters</a></p>
@@ -1273,136 +1268,18 @@ svg :is([fill="white"], [fill^="#fff"]) {
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
-            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-decision-rationale" class="internal xref">Decision Rationale:</a></p>
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-references" class="internal xref">References</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
+                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2">
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="auto internal xref">3.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+</li>
+            </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
-            <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-load-sharing-strategy" class="internal xref">Load Sharing Strategy:</a></p>
-</li>
-          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
-            <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-decision-rationale-2" class="internal xref">Decision Rationale:</a></p>
-<ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1">
-                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="auto internal xref">5.1</a>.  <a href="#name-edge-cases" class="internal xref">Edge cases</a></p>
-<ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1.2.1">
-                    <p id="section-toc.1-1.5.2.1.2.1.1"><a href="#section-5.1.1" class="auto internal xref">5.1.1</a>.  <a href="#name-integration-with-tsvwg-stan" class="internal xref">Integration with TSVWG Standards</a></p>
-</li>
-                </ul>
-</li>
-            </ul>
-</li>
-          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
-            <p id="section-toc.1-1.6.1"><a href="#section-6" class="auto internal xref">6</a>.  <a href="#name-conventions-and-definitions" class="internal xref">Conventions and Definitions</a></p>
-<ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.1">
-                <p id="section-toc.1-1.6.2.1.1"><a href="#section-6.1" class="auto internal xref">6.1</a>.  <a href="#name-terminology" class="internal xref">Terminology</a></p>
-</li>
-            </ul>
-</li>
-          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
-            <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-security-considerations" class="internal xref">Security Considerations</a></p>
-<ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.1">
-                <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="auto internal xref">7.1</a>.  <a href="#name-trust-model-and-authenticat" class="internal xref">Trust Model and Authentication</a></p>
-<ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.1.2.1">
-                    <p id="section-toc.1-1.7.2.1.2.1.1"><a href="#section-7.1.1" class="auto internal xref">7.1.1</a>.  <a href="#name-tunnel-endpoint-authenticat" class="internal xref">Tunnel Endpoint Authentication</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.1.2.2">
-                    <p id="section-toc.1-1.7.2.1.2.2.1"><a href="#section-7.1.2" class="auto internal xref">7.1.2</a>.  <a href="#name-metrics-integrity" class="internal xref">Metrics Integrity</a></p>
-</li>
-                </ul>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.2">
-                <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="auto internal xref">7.2</a>.  <a href="#name-privacy-considerations" class="internal xref">Privacy Considerations</a></p>
-<ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.2.2.1">
-                    <p id="section-toc.1-1.7.2.2.2.1.1"><a href="#section-7.2.1" class="auto internal xref">7.2.1</a>.  <a href="#name-traffic-analysis-risks" class="internal xref">Traffic Analysis Risks</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.2.2.2">
-                    <p id="section-toc.1-1.7.2.2.2.2.1"><a href="#section-7.2.2" class="auto internal xref">7.2.2</a>.  <a href="#name-split-tunneling-security" class="internal xref">Split Tunneling Security</a></p>
-</li>
-                </ul>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.3">
-                <p id="section-toc.1-1.7.2.3.1"><a href="#section-7.3" class="auto internal xref">7.3</a>.  <a href="#name-transport-security-integrat" class="internal xref">Transport Security Integration</a></p>
-<ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.3.2.1">
-                    <p id="section-toc.1-1.7.2.3.2.1.1"><a href="#section-7.3.1" class="auto internal xref">7.3.1</a>.  <a href="#name-nested-encryption-overhead" class="internal xref">Nested Encryption Overhead</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.3.2.2">
-                    <p id="section-toc.1-1.7.2.3.2.2.1"><a href="#section-7.3.2" class="auto internal xref">7.3.2</a>.  <a href="#name-ecn-security-implications" class="internal xref">ECN Security Implications</a></p>
-</li>
-                </ul>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.4">
-                <p id="section-toc.1-1.7.2.4.1"><a href="#section-7.4" class="auto internal xref">7.4</a>.  <a href="#name-implementation-security" class="internal xref">Implementation Security</a></p>
-<ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.4.2.1">
-                    <p id="section-toc.1-1.7.2.4.2.1.1"><a href="#section-7.4.1" class="auto internal xref">7.4.1</a>.  <a href="#name-algorithm-side-channels" class="internal xref">Algorithm Side Channels</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.4.2.2">
-                    <p id="section-toc.1-1.7.2.4.2.2.1"><a href="#section-7.4.2" class="auto internal xref">7.4.2</a>.  <a href="#name-configuration-security" class="internal xref">Configuration Security</a></p>
-</li>
-                </ul>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.5">
-                <p id="section-toc.1-1.7.2.5.1"><a href="#section-7.5" class="auto internal xref">7.5</a>.  <a href="#name-threat-model-considerations" class="internal xref">Threat Model Considerations</a></p>
-<ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.5.2.1">
-                    <p id="section-toc.1-1.7.2.5.2.1.1"><a href="#section-7.5.1" class="auto internal xref">7.5.1</a>.  <a href="#name-adversary-capabilities" class="internal xref">Adversary Capabilities</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.5.2.2">
-                    <p id="section-toc.1-1.7.2.5.2.2.1"><a href="#section-7.5.2" class="auto internal xref">7.5.2</a>.  <a href="#name-protection-mechanisms" class="internal xref">Protection Mechanisms</a></p>
-</li>
-                </ul>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.6">
-                <p id="section-toc.1-1.7.2.6.1"><a href="#section-7.6" class="auto internal xref">7.6</a>.  <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
-<ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.6.2.1">
-                    <p id="section-toc.1-1.7.2.6.2.1.1"><a href="#section-7.6.1" class="auto internal xref">7.6.1</a>.  <a href="#name-new-registry-for-path-selec" class="internal xref">New Registry for Path Selection Metrics</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.6.2.2">
-                    <p id="section-toc.1-1.7.2.6.2.2.1"><a href="#section-7.6.2" class="auto internal xref">7.6.2</a>.  <a href="#name-updates-to-existing-registr" class="internal xref">Updates to Existing Registries</a></p>
-</li>
-                </ul>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.7">
-                <p id="section-toc.1-1.7.2.7.1"><a href="#section-7.7" class="auto internal xref">7.7</a>.  <a href="#name-conclusions" class="internal xref">Conclusions</a></p>
-<ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.7.2.1">
-                    <p id="section-toc.1-1.7.2.7.2.1.1"><a href="#section-7.7.1" class="auto internal xref">7.7.1</a>.  <a href="#name-technical-contributions" class="internal xref">Technical Contributions</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.7.2.2">
-                    <p id="section-toc.1-1.7.2.7.2.2.1"><a href="#section-7.7.2" class="auto internal xref">7.7.2</a>.  <a href="#name-deployment-considerations" class="internal xref">Deployment Considerations</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.7.2.3">
-                    <p id="section-toc.1-1.7.2.7.2.3.1"><a href="#section-7.7.3" class="auto internal xref">7.7.3</a>.  <a href="#name-future-work" class="internal xref">Future Work</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.7.2.4">
-                    <p id="section-toc.1-1.7.2.7.2.4.1"><a href="#section-7.7.4" class="auto internal xref">7.7.4</a>.  <a href="#name-standards-impact" class="internal xref">Standards Impact</a></p>
-</li>
-                </ul>
-</li>
-            </ul>
-</li>
-          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
-            <p id="section-toc.1-1.8.1"><a href="#section-8" class="auto internal xref">8</a>.  <a href="#name-references" class="internal xref">References</a></p>
-<ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.1">
-                <p id="section-toc.1-1.8.2.1.1"><a href="#section-8.1" class="auto internal xref">8.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.2">
-                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="auto internal xref">8.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
-</li>
-            </ul>
-</li>
-          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
-            <p id="section-toc.1-1.9.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-acknowledgments" class="internal xref">Acknowledgments</a></p>
-</li>
-          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10">
-            <p id="section-toc.1-1.10.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-authors-address" class="internal xref">Author's Address</a></p>
+            <p id="section-toc.1-1.4.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-authors-address" class="internal xref">Author's Address</a></p>
 </li>
         </ul>
 </nav>
@@ -1427,7 +1304,7 @@ Over this the Internet Service Providers may further controlouting policies and 
 - Policy-based routing that may override optimal path selection for security
 - Service Level Agreement (SLA) enforcement mechanisms
 - Centralized management
-- predterminded ingress and egress points
+- predtermined ingress and egress points
 Unlike open internet traffic where applications can freely choose destinations, tunneled traffic has limited Endpoint Flexibility.<a href="#section-1.1-3" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -1475,141 +1352,141 @@ Multiple proprietary implementations increase the overall attack surface as Vend
 </div>
 </section>
 </div>
+<div id="the-need-for-standardization">
+<section id="section-1.2.2">
+          <h4 id="name-the-need-for-standardizatio">
+<a href="#section-1.2.2" class="section-number selfRef">1.2.2. </a><a href="#name-the-need-for-standardizatio" class="section-name selfRef">The Need for Standardization</a>
+          </h4>
+<p id="section-1.2.2-1">These disadvantages collectively demonstrate the critical importance of standardized path selection algorithms that can ensure consistent behavior by providing predictable path selection decisions across vendor boundaries, enable interoperability through seamless integration of multi-vendor network infrastructure, reduce operational complexity and enable global optimization rather than vendor-specific local optimization, and enhance security through consistent policy enforcement and threat response across all network elements.<a href="#section-1.2.2-1" class="pilcrow">¶</a></p>
+<div id="path-discovery-overhead-and-resulting-conflicts">
+<section id="section-1.2.2.1">
+            <h5 id="name-path-discovery-overhead-and">
+<a href="#section-1.2.2.1" class="section-number selfRef">1.2.2.1. </a><a href="#name-path-discovery-overhead-and" class="section-name selfRef">Path discovery overhead and resulting conflicts</a>
+            </h5>
+<p id="section-1.2.2.1-1">The absence of standardized path selection algorithms creates significant overhead in discovering optimal paths and leads to widespread fragmentation challenges across heterogeneous tunnel deployments. When networking protocols use hole punching to establish paths between endpoints and multiple tunnels are formed for primary-standby or load sharing configurations, each vendor implements proprietary Path MTU Discovery (PMTUD) mechanisms that operate independently and often conflict with each other. This lack of coordination results in redundant path probing, where multiple vendors simultaneously attempt to discover the same path characteristics, consuming valuable bandwidth and generating unnecessary control traffic. The fragmentation problem is particularly acute because nested tunnels greatly impact traffic quality, with each encapsulation layer introducing additional headers that reduce the effective payload size, leading to frequent fragmentation and defragmentation cycles that increase computational overhead especially for time-sensitive applications operating under limited bandwidth constraints.<a href="#section-1.2.2.1-1" class="pilcrow">¶</a></p>
+<p id="section-1.2.2.1-2">While <span>[<a href="#RFC9868" class="cite xref">RFC9868</a>]</span> Transport Options for UDP provides mechanisms for enhanced path characteristic discovery through embedded metrics, congestion state signaling, and capability advertisement within regular data packets, UDP options-based signaling falls fundamentally short in addressing the core challenges of optimal path selection in multi-vendor environments. The UDP options approach suffers from limited cross-vendor coordination where different implementations may interpret or prioritize the embedded path quality indicators differently. Furthermore, the DPLPMTUD implementation through UDP options designed to minimize fragmentation-related overhead becomes ineffective when vendors use incompatible fragmentation strategies or fail to coordinate MTU discovery across nested tunnel layers, resulting in suboptimal path selections that may actually increase rather than decrease fragmentation.<a href="#section-1.2.2.1-2" class="pilcrow">¶</a></p>
+<p id="section-1.2.2.1-3">The inadequacy becomes evident in complex multi-vendor scenarios where algorithm negotiation, ECN propagation and conflict detection mechanisms fail to provide the comprehensive coordination needed for truly globally optimal path selection. Even with sophisticated features like authenticated ECN marking propagation through nested tunnel layers and active identification of congestion control interference, the fundamental problem remains that these mechanisms operate in isolation without a standardized framework for making unified path selection decisions. This fragmentation of approaches leads to situations where UDP options may indicate one path as optimal based on embedded metrics, while vendor-specific algorithms select different paths based on proprietary criteria, resulting in inconsistent path selection behavior** that undermines the very benefits that UDP options were designed to provide. The lack of a unified decision-making framework means that even advanced signaling capabilities cannot overcome the coordination challenges inherent in multi-vendor tunnel deployments, necessitating the standardized path selection algorithm proposed in this document.<a href="#section-1.2.2.1-3" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="the-need-for-standardization">
-<section id="section-1.3">
-        <h3 id="name-the-need-for-standardizatio">
-<a href="#section-1.3" class="section-number selfRef">1.3. </a><a href="#name-the-need-for-standardizatio" class="section-name selfRef">The Need for Standardization</a>
-        </h3>
-<p id="section-1.3-1">These disadvantages collectively demonstrate the critical importance of standardized path selection algorithms that can ensure consistent behavior by providing predictable path selection decisions across vendor boundaries, enable interoperability through seamless integration of multi-vendor network infrastructure, reduce operational complexity and enable global optimization rather than vendor-specific local optimization, and enhance security through consistent policy enforcement and threat response across all network elements.<a href="#section-1.3-1" class="pilcrow">¶</a></p>
-<div id="path-discovery-overhead-and-resulting-conflicts">
-<section id="section-1.3.1">
-          <h4 id="name-path-discovery-overhead-and">
-<a href="#section-1.3.1" class="section-number selfRef">1.3.1. </a><a href="#name-path-discovery-overhead-and" class="section-name selfRef">Path discovery overhead and resulting conflicts</a>
-          </h4>
-<p id="section-1.3.1-1">The absence of standardized path selection algorithms creates significant overhead in discovering optimal paths and leads to widespread fragmentation challenges across heterogeneous tunnel deployments. When networking protocols use hole punching to establish paths between endpoints and multiple tunnels are formed for primary-standby or load sharing configurations, each vendor implements proprietary Path MTU Discovery (PMTUD) mechanisms that operate independently and often conflict with each other. This lack of coordination results in redundant path probing, where multiple vendors simultaneously attempt to discover the same path characteristics, consuming valuable bandwidth and generating unnecessary control traffic. The fragmentation problem is particularly acute because nested tunnels greatly impact traffic quality, with each encapsulation layer introducing additional headers that reduce the effective payload size, leading to frequent fragmentation and defragmentation cycles that increase computational overhead especially for time-sensitive applications operating under limited bandwidth constraints.<a href="#section-1.3.1-1" class="pilcrow">¶</a></p>
-<p id="section-1.3.1-2">While <span>[<a href="#RFC9868" class="cite xref">RFC9868</a>]</span> Transport Options for UDP provides mechanisms for enhanced path characteristic discovery through embedded metrics, congestion state signaling, and capability advertisement within regular data packets, UDP options-based signaling falls fundamentally short in addressing the core challenges of optimal path selection in multi-vendor environments. The UDP options approach suffers from limited cross-vendor coordination where different implementations may interpret or prioritize the embedded path quality indicators differently. Furthermore, the DPLPMTUD implementation through UDP options designed to minimize fragmentation-related overhead becomes ineffective when vendors use incompatible fragmentation strategies or fail to coordinate MTU discovery across nested tunnel layers, resulting in suboptimal path selections that may actually increase rather than decrease fragmentation.<a href="#section-1.3.1-2" class="pilcrow">¶</a></p>
-<p id="section-1.3.1-3">The inadequacy becomes evident in complex multi-vendor scenarios where algorithm negotiation, ECN propagation and conflict detection mechanisms fail to provide the comprehensive coordination needed for truly globally optimal path selection. Even with sophisticated features like authenticated ECN marking propagation through nested tunnel layers and active identification of congestion control interference, the fundamental problem remains that these mechanisms operate in isolation without a standardized framework for making unified path selection decisions. This fragmentation of approaches leads to situations where UDP options may indicate one path as optimal based on embedded metrics, while vendor-specific algorithms select different paths based on proprietary criteria, resulting in inconsistent path selection behavior** that undermines the very benefits that UDP options were designed to provide. The lack of a unified decision-making framework means that even advanced signaling capabilities cannot overcome the coordination challenges inherent in multi-vendor tunnel deployments, necessitating the standardized path selection algorithm proposed in this document.<a href="#section-1.3.1-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="congestion">
-<section id="section-1.3.2">
+<section id="section-1.2.3">
           <h4 id="name-multilevel-congestion-contr">
-<a href="#section-1.3.2" class="section-number selfRef">1.3.2. </a><a href="#name-multilevel-congestion-contr" class="section-name selfRef">Multilevel Congestion Control and ECN Propagation</a>
+<a href="#section-1.2.3" class="section-number selfRef">1.2.3. </a><a href="#name-multilevel-congestion-contr" class="section-name selfRef">Multilevel Congestion Control and ECN Propagation</a>
           </h4>
-<p id="section-1.3.2-1">Nested tunneling protocols create significant challenges for congestion control mechanisms, particularly when multiple layers independently attempt to manage network congestion. This section addresses these challenges in accordance with <span>[<a href="#RFC9599" class="cite xref">RFC9599</a>]</span> guidelines that add congestion notification to protocols that encapsulate IP. When transport protocols are tunneled within other transport protocols, multiple congestion control loops can interfere with each other, creating a complex interaction where the inner transport congestion control (e.g., TCP or QUIC) implements its own congestion control based on observed packet loss and RTT measurements, while simultaneously the tunnel transport congestion control (e.g., QUIC for MASQUE, UDP for IPsec) may implement its own independent congestion control mechanisms. These interaction effects result in the tunnel's congestion control affecting the RTT and loss measurements of the inner transport, leading to suboptimal performance and potential oscillations that degrade overall network efficiency.<a href="#section-1.3.2-1" class="pilcrow">¶</a></p>
-<p id="section-1.3.2-2">During ECN encapsulation, tunnel endpoints must copy the ECN field from the inner header to the outer header as specified in <span>[<a href="#RFC6040" class="cite xref">RFC6040</a>]</span> to negotiate ECN capability during tunnel establishment to enable proper congestion notification propagation, but this process becomes increasingly complex when multiple ECMP tunnels or aggregated flows are involved, each potentially implementing different ECN handling strategies.<a href="#section-1.3.2-2" class="pilcrow">¶</a></p>
-<p id="section-1.3.2-3">To address these multilevel congestion control challenges, the proposed congestion-aware path selection algorithm incorporates multiple sophisticated mechanisms that work synergistically to provide comprehensive network congestion awareness. The algorithm monitors ECN CE (Congestion Experienced) markings on different paths to assess real-time congestion levels, while it also identifies increased RTT variability that often indicates congestion for path quality assessment that inform path selection decisions, and where available, queue delay measurements offer early congestion detection capabilities that enable proactive path switching before performance degradation becomes severe.<a href="#section-1.3.2-3" class="pilcrow">¶</a></p>
-<p id="section-1.3.2-4">This integrated approach to congestion management represents a significant advancement over current fragmented solutions, providing a standardized framework that can effectively coordinate congestion control across multiple tunnel layers while maintaining compatibility with existing <span>[<a href="#RFC9599" class="cite xref">RFC9599</a>]</span> and <span>[<a href="#RFC6040" class="cite xref">RFC6040</a>]</span> standards. By incorporating these multiple congestion indicators into a unified decision-making process, the algorithm can make intelligent path selection decisions that avoid the oscillations and performance degradation inherent in current multilevel congestion control implementations.<a href="#section-1.3.2-4" class="pilcrow">¶</a></p>
+<p id="section-1.2.3-1">Nested tunneling protocols create significant challenges for congestion control mechanisms, particularly when multiple layers independently attempt to manage network congestion. This section addresses these challenges in accordance with <span>[<a href="#RFC9599" class="cite xref">RFC9599</a>]</span> guidelines that add congestion notification to protocols that encapsulate IP. When transport protocols are tunneled within other transport protocols, multiple congestion control loops can interfere with each other, creating a complex interaction where the inner transport congestion control (e.g., TCP or QUIC) implements its own congestion control based on observed packet loss and RTT measurements, while simultaneously the tunnel transport congestion control (e.g., QUIC for MASQUE, UDP for IPsec) may implement its own independent congestion control mechanisms. These interaction effects result in the tunnel's congestion control affecting the RTT and loss measurements of the inner transport, leading to suboptimal performance and potential oscillations that degrade overall network efficiency.<a href="#section-1.2.3-1" class="pilcrow">¶</a></p>
+<p id="section-1.2.3-2">During ECN encapsulation, tunnel endpoints must copy the ECN field from the inner header to the outer header as specified in <span>[<a href="#RFC6040" class="cite xref">RFC6040</a>]</span> to negotiate ECN capability during tunnel establishment to enable proper congestion notification propagation, but this process becomes increasingly complex when multiple ECMP tunnels or aggregated flows are involved, each potentially implementing different ECN handling strategies.<a href="#section-1.2.3-2" class="pilcrow">¶</a></p>
+<p id="section-1.2.3-3">To address these multilevel congestion control challenges, the proposed congestion-aware path selection algorithm incorporates multiple sophisticated mechanisms that work synergistically to provide comprehensive network congestion awareness. The algorithm monitors ECN CE (Congestion Experienced) markings on different paths to assess real-time congestion levels, while it also identifies increased RTT variability that often indicates congestion for path quality assessment that inform path selection decisions, and where available, queue delay measurements offer early congestion detection capabilities that enable proactive path switching before performance degradation becomes severe.<a href="#section-1.2.3-3" class="pilcrow">¶</a></p>
+<p id="section-1.2.3-4">This integrated approach to congestion management represents a significant advancement over current fragmented solutions, providing a standardized framework that can effectively coordinate congestion control across multiple tunnel layers while maintaining compatibility with existing <span>[<a href="#RFC9599" class="cite xref">RFC9599</a>]</span> and <span>[<a href="#RFC6040" class="cite xref">RFC6040</a>]</span> standards. By incorporating these multiple congestion indicators into a unified decision-making process, the algorithm can make intelligent path selection decisions that avoid the oscillations and performance degradation inherent in current multilevel congestion control implementations.<a href="#section-1.2.3-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="prioritization">
-<section id="section-1.3.3">
+<section id="section-1.2.4">
           <h4 id="name-prioritization">
-<a href="#section-1.3.3" class="section-number selfRef">1.3.3. </a><a href="#name-prioritization" class="section-name selfRef">Prioritization</a>
+<a href="#section-1.2.4" class="section-number selfRef">1.2.4. </a><a href="#name-prioritization" class="section-name selfRef">Prioritization</a>
           </h4>
-<p id="section-1.3.3-1">Mainstream techniques such as packet marking( DSCP, ECN so on ) and queuing of other non-critical traffic (Fq-CODEL, CAKE AQM) to optimize for realtime streams is essentially prioritization in practice. However, VPN providers, CSPs and/or ISP may employ polar-opposite algorithms to shape traffic based on their interest which could lead to  an overall non-synchronized approach, where a stream is prioritized in some networks and deprioritized in other networks.
-[Diagram: Prioritization across networks - shows how different networks may prioritize the same traffic differently]<a href="#section-1.3.3-1" class="pilcrow">¶</a></p>
+<p id="section-1.2.4-1">Mainstream techniques such as packet marking( DSCP, ECN so on ) and queuing of other non-critical traffic (Fq-CODEL, CAKE AQM) to optimize for realtime streams is essentially prioritization in practice. However, VPN providers, CSPs and/or ISP may employ polar-opposite algorithms to shape traffic based on their interest which could lead to  an overall non-synchronized approach, where a stream is prioritized in some networks and deprioritized in other networks.
+[Diagram: Prioritization across networks - shows how different networks may prioritize the same traffic differently]<a href="#section-1.2.4-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
 </div>
 <div id="limited-scope-of-past-proposals-for-prioritiztion-or-path-selection">
-<section id="section-1.4">
+<section id="section-1.3">
         <h3 id="name-limited-scope-of-past-propo">
-<a href="#section-1.4" class="section-number selfRef">1.4. </a><a href="#name-limited-scope-of-past-propo" class="section-name selfRef">Limited scope of past proposals for prioritiztion or path selection</a>
+<a href="#section-1.3" class="section-number selfRef">1.3. </a><a href="#name-limited-scope-of-past-propo" class="section-name selfRef">Limited scope of past proposals for prioritiztion or path selection</a>
         </h3>
-<p id="section-1.4-1">Some prior work presented to IETF with the inevitable need for traffic shaping and prioritiation may include one or more of the following<a href="#section-1.4-1" class="pilcrow">¶</a></p>
-<p id="section-1.4-2">At present, in the case of multiple active uplinks connecting to various ISPs, there are multiple techniques to steer or prioritize traffic across the network (see <span>[<a href="#I-D.ietf-intarea-tunnels" class="cite xref">I-D.ietf-intarea-tunnels</a>]</span>), which may include,<a href="#section-1.4-2" class="pilcrow">¶</a></p>
+<p id="section-1.3-1">Some prior work presented to IETF with the inevitable need for traffic shaping and prioritiation may include one or more of the following<a href="#section-1.3-1" class="pilcrow">¶</a></p>
+<p id="section-1.3-2">At present, in the case of multiple active uplinks connecting to various ISPs, there are multiple techniques to steer or prioritize traffic across the network (see <span>[<a href="#I-D.ietf-intarea-tunnels" class="cite xref">I-D.ietf-intarea-tunnels</a>]</span>), which may include,<a href="#section-1.3-2" class="pilcrow">¶</a></p>
 <div id="full-or-split-tunnel-based-on-diff-serv-via-differentiated-services-code-point-dscp">
-<section id="section-1.4.1">
+<section id="section-1.3.1">
           <h4 id="name-1-full-or-split-tunnel-base">
-<a href="#section-1.4.1" class="section-number selfRef">1.4.1. </a><a href="#name-1-full-or-split-tunnel-base" class="section-name selfRef">1: Full or Split tunnel based on Diff Serv via Differentiated Services Code Point (DSCP)</a>
+<a href="#section-1.3.1" class="section-number selfRef">1.3.1. </a><a href="#name-1-full-or-split-tunnel-base" class="section-name selfRef">1: Full or Split tunnel based on Diff Serv via Differentiated Services Code Point (DSCP)</a>
           </h4>
-<p id="section-1.4.1-1"><span>[<a href="#RFC3270" class="cite xref">RFC3270</a>]</span> defines how to support the Diffserv architecture in MPLS networks, including how to encode DSCP in an MPLS header. Application priorities even though using the same protocol have also been used to mark the packets differently such as DSCP Packet Markings for WebRTC QoS <span>[<a href="#RFC8807" class="cite xref">RFC8807</a>]</span>.
-An example of path selection based on prioritiztion is that in case of dual uplinks available hosting an active tunnel tunnel each, use the one more with better performance for RTP since that is more prirotized over FTP data.<a href="#section-1.4.1-1" class="pilcrow">¶</a></p>
-<p id="section-1.4.1-2">The DSCP-based approach offers the advantage of being widely adopted across network infrastructures, making it a familiar and standardized method for traffic differentiation. However, this approach has significant limitations including unreliability in some cases where network operators may choose not to honor markings, and the inherent coarse-grained classification that cannot adequately differentiate between nuanced application requirements.<a href="#section-1.4.1-2" class="pilcrow">¶</a></p>
+<p id="section-1.3.1-1"><span>[<a href="#RFC3270" class="cite xref">RFC3270</a>]</span> defines how to support the Diffserv architecture in MPLS networks, including how to encode DSCP in an MPLS header. Application priorities even though using the same protocol have also been used to mark the packets differently such as DSCP Packet Markings for WebRTC QoS <span>[<a href="#RFC8807" class="cite xref">RFC8807</a>]</span>.
+An example of path selection based on prioritiztion is that in case of dual uplinks available hosting an active tunnel tunnel each, use the one more with better performance for RTP since that is more prirotized over FTP data.<a href="#section-1.3.1-1" class="pilcrow">¶</a></p>
+<p id="section-1.3.1-2">The DSCP-based approach offers the advantage of being widely adopted across network infrastructures, making it a familiar and standardized method for traffic differentiation. However, this approach has significant limitations including unreliability in some cases where network operators may choose not to honor markings, and the inherent coarse-grained classification that cannot adequately differentiate between nuanced application requirements.<a href="#section-1.3.1-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="multiple-active-vpn-uplinks-used-in-weighted-round-robin-order-or-ecmp">
-<section id="section-1.4.2">
+<section id="section-1.3.2">
           <h4 id="name-2-multiple-active-vpn-uplin">
-<a href="#section-1.4.2" class="section-number selfRef">1.4.2. </a><a href="#name-2-multiple-active-vpn-uplin" class="section-name selfRef">2: Multiple Active VPN Uplinks used in weighted round robin order or ECMP</a>
+<a href="#section-1.3.2" class="section-number selfRef">1.3.2. </a><a href="#name-2-multiple-active-vpn-uplin" class="section-name selfRef">2: Multiple Active VPN Uplinks used in weighted round robin order or ECMP</a>
           </h4>
-<p id="section-1.4.2-1">In case of multiple Active VPN Uplinks available, multiple paths are available to a  destination which can be split tunneled, tunneled via different application or network layer or both such as nested tunneled.  With so many options generic traffic shaping rules are often applied which may be based on QoS such as MOS, loss, latency, jitter, usage history, throughput on all VPN sessions or any other customized score. Attributes such as app type, address or even client identifier such as mac address can also be used to balance load across available options.  Simple loop techniques such as Weighted Round Robin do not offer much granularity and can also result in misconfiguration or worse still creating a bottleneck. Other means of balancing the traffic across available paths are Equal-cost multi-path (ECMP) <span>[<a href="#RFC2992" class="cite xref">RFC2992</a>]</span> which is fair by design and routes packets along multiple paths of equal cost but suffers from limited adaptability especially in sudden changes of network conditions and heterogeneous environments of unequal costs.
-Although it is tough to make a path selection algorithm which is ideal for balance, scalability as well optimized for all kinds of resource utilization, not having a common basis for path selection can not only lead to detrimental user experience but also undue strain on the network.<a href="#section-1.4.2-1" class="pilcrow">¶</a></p>
+<p id="section-1.3.2-1">In case of multiple Active VPN Uplinks available, multiple paths are available to a  destination which can be split tunneled, tunneled via different application or network layer or both such as nested tunneled.  With so many options generic traffic shaping rules are often applied which may be based on QoS such as MOS, loss, latency, jitter, usage history, throughput on all VPN sessions or any other customized score. Attributes such as app type, address or even client identifier such as mac address can also be used to balance load across available options.  Simple loop techniques such as Weighted Round Robin do not offer much granularity and can also result in misconfiguration or worse still creating a bottleneck. Other means of balancing the traffic across available paths are Equal-cost multi-path (ECMP) <span>[<a href="#RFC2992" class="cite xref">RFC2992</a>]</span> which is fair by design and routes packets along multiple paths of equal cost but suffers from limited adaptability especially in sudden changes of network conditions and heterogeneous environments of unequal costs.
+Although it is tough to make a path selection algorithm which is ideal for balance, scalability as well optimized for all kinds of resource utilization, not having a common basis for path selection can not only lead to detrimental user experience but also undue strain on the network.<a href="#section-1.3.2-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="policy-based-routing-that-use-flow-preferences-to-pin-traffic-to-a-particular-path">
-<section id="section-1.4.3">
+<section id="section-1.3.3">
           <h4 id="name-3-policy-based-routing-that">
-<a href="#section-1.4.3" class="section-number selfRef">1.4.3. </a><a href="#name-3-policy-based-routing-that" class="section-name selfRef">3. Policy-Based routing that use flow preferences to pin traffic to a particular path</a>
+<a href="#section-1.3.3" class="section-number selfRef">1.3.3. </a><a href="#name-3-policy-based-routing-that" class="section-name selfRef">3. Policy-Based routing that use flow preferences to pin traffic to a particular path</a>
           </h4>
-<p id="section-1.4.3-1">It is common for device or network policy to manage network flows such as bandwidth allocation or rate limiting, Geo or proximity based rules. At the device level these policies may prioritize some packets over others to avoid queing delay. Modern hybrid deployments employ many uplinks with a varity of traffic shaping policies which can be adjusted dynmaically not only based on Qos but also on hop-by-hop insights from network, tracking uplink's utilization, uptime, failure or outages.<a href="#section-1.4.3-1" class="pilcrow">¶</a></p>
-<p id="section-1.4.3-2">Policy-based routing provides the benefit of simplicity in implementation and configuration, making it straightforward for network administrators to define and manage traffic flows. However, this approach suffers from poor scalability as the number of policies and network complexity grows, often requiring manual intervention and becoming unwieldy in large-scale deployments.<a href="#section-1.4.3-2" class="pilcrow">¶</a></p>
+<p id="section-1.3.3-1">It is common for device or network policy to manage network flows such as bandwidth allocation or rate limiting, Geo or proximity based rules. At the device level these policies may prioritize some packets over others to avoid queing delay. Modern hybrid deployments employ many uplinks with a varity of traffic shaping policies which can be adjusted dynmaically not only based on Qos but also on hop-by-hop insights from network, tracking uplink's utilization, uptime, failure or outages.<a href="#section-1.3.3-1" class="pilcrow">¶</a></p>
+<p id="section-1.3.3-2">Policy-based routing provides the benefit of simplicity in implementation and configuration, making it straightforward for network administrators to define and manage traffic flows. However, this approach suffers from poor scalability as the number of policies and network complexity grows, often requiring manual intervention and becoming unwieldy in large-scale deployments.<a href="#section-1.3.3-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="dynamic-path-selection-with-application-or-domain-identification">
-<section id="section-1.4.4">
+<section id="section-1.3.4">
           <h4 id="name-4-dynamic-path-selection-wi">
-<a href="#section-1.4.4" class="section-number selfRef">1.4.4. </a><a href="#name-4-dynamic-path-selection-wi" class="section-name selfRef">4. Dynamic Path Selection with application or domain identification</a>
+<a href="#section-1.3.4" class="section-number selfRef">1.3.4. </a><a href="#name-4-dynamic-path-selection-wi" class="section-name selfRef">4. Dynamic Path Selection with application or domain identification</a>
           </h4>
-<p id="section-1.4.4-1">The aplication knows its type and can directly feed the information to the algorithm. If the sender is not aware of the application it can attempt to obtain this information from intelligent ML models as Network Based Application Recognition (NBAR) from Cisco. Models exist that can suggest bottlenecks for a traffic type on a path by analysising patterns.
-Dynamic path selection can even rely on explicitly identifying Provisioning Domain Names through a Router Advertisement (RA) option. Discovering Provisioning Domain Names and Data, its architecture involving the authenticatio and trust model has been decribed in prior work <span>[<a href="#RFC7556" class="cite xref">RFC7556</a>]</span> and <span>[<a href="#RFC8801" class="cite xref">RFC8801</a>]</span>.<a href="#section-1.4.4-1" class="pilcrow">¶</a></p>
+<p id="section-1.3.4-1">The aplication knows its type and can directly feed the information to the algorithm. If the sender is not aware of the application it can attempt to obtain this information from intelligent ML models as Network Based Application Recognition (NBAR) from Cisco. Models exist that can suggest bottlenecks for a traffic type on a path by analysising patterns.
+Dynamic path selection can even rely on explicitly identifying Provisioning Domain Names through a Router Advertisement (RA) option. Discovering Provisioning Domain Names and Data, its architecture involving the authenticatio and trust model has been decribed in prior work <span>[<a href="#RFC7556" class="cite xref">RFC7556</a>]</span> and <span>[<a href="#RFC8801" class="cite xref">RFC8801</a>]</span>.<a href="#section-1.3.4-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="masque-quic-multiplexing-for-all-web-trafic">
-<section id="section-1.4.5">
+<section id="section-1.3.5">
           <h4 id="name-5-masque-quic-multiplexing-">
-<a href="#section-1.4.5" class="section-number selfRef">1.4.5. </a><a href="#name-5-masque-quic-multiplexing-" class="section-name selfRef">5. MASQUE (QUIC multiplexing) for all Web trafic</a>
+<a href="#section-1.3.5" class="section-number selfRef">1.3.5. </a><a href="#name-5-masque-quic-multiplexing-" class="section-name selfRef">5. MASQUE (QUIC multiplexing) for all Web trafic</a>
           </h4>
-<p id="section-1.4.5-1">[Diagram: MASQUE QUIC multiplexing architecture showing stream multiplexing over HTTP/3]<a href="#section-1.4.5-1" class="pilcrow">¶</a></p>
-<p id="section-1.4.5-2">MASQUE provides the advantage of being able to handle both reliable and unreliable data streams efficiently through QUIC multiplexing, offering flexibility in transport protocol selection. However, this approach has the limitation of not being well-suited for non-web-based traffic, potentially requiring additional adaptations or alternative solutions for enterprise applications that do not follow web protocols.<a href="#section-1.4.5-2" class="pilcrow">¶</a></p>
+<p id="section-1.3.5-1">[Diagram: MASQUE QUIC multiplexing architecture showing stream multiplexing over HTTP/3]<a href="#section-1.3.5-1" class="pilcrow">¶</a></p>
+<p id="section-1.3.5-2">MASQUE provides the advantage of being able to handle both reliable and unreliable data streams efficiently through QUIC multiplexing, offering flexibility in transport protocol selection. However, this approach has the limitation of not being well-suited for non-web-based traffic, potentially requiring additional adaptations or alternative solutions for enterprise applications that do not follow web protocols.<a href="#section-1.3.5-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="whitelist-for-ip-address-or-tuples-to-prioritize">
-<section id="section-1.4.6">
+<section id="section-1.3.6">
           <h4 id="name-6-whitelist-for-ip-address-">
-<a href="#section-1.4.6" class="section-number selfRef">1.4.6. </a><a href="#name-6-whitelist-for-ip-address-" class="section-name selfRef">6. Whitelist for IP address or tuples to prioritize</a>
+<a href="#section-1.3.6" class="section-number selfRef">1.3.6. </a><a href="#name-6-whitelist-for-ip-address-" class="section-name selfRef">6. Whitelist for IP address or tuples to prioritize</a>
           </h4>
-<p id="section-1.4.6-1">Using whitelists for IP addresses or tuples offers the advantage of simplicity in implementation and clear, understandable traffic prioritization rules. However, this approach suffers from poor scalability as networks grow and IP address ranges change, requiring constant maintenance and becoming impractical for large-scale dynamic environments.<a href="#section-1.4.6-1" class="pilcrow">¶</a></p>
+<p id="section-1.3.6-1">Using whitelists for IP addresses or tuples offers the advantage of simplicity in implementation and clear, understandable traffic prioritization rules. However, this approach suffers from poor scalability as networks grow and IP address ranges change, requiring constant maintenance and becoming impractical for large-scale dynamic environments.<a href="#section-1.3.6-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="entropy-headers">
-<section id="section-1.4.7">
+<section id="section-1.3.7">
           <h4 id="name-7-entropy-headers">
-<a href="#section-1.4.7" class="section-number selfRef">1.4.7. </a><a href="#name-7-entropy-headers" class="section-name selfRef">7. Entropy headers</a>
+<a href="#section-1.3.7" class="section-number selfRef">1.3.7. </a><a href="#name-7-entropy-headers" class="section-name selfRef">7. Entropy headers</a>
           </h4>
-<p id="section-1.4.7-1">Entropy headers are extension to traditional packet header that include information about the randomness of the packet's payload. These help distributing traffic more evenly in a multipath network, mitigating the risk of hotspots and potential congestion points.<a href="#section-1.4.7-1" class="pilcrow">¶</a></p>
-<p id="section-1.4.7-2">Entropy headers provide the advantage of being protected from in-path modification by making these headers non-updatable, ensuring the integrity of load balancing decisions. However, this approach raises privacy concerns as the entropy information may reveal patterns about the payload content or application behavior that could be exploited by network observers.<a href="#section-1.4.7-2" class="pilcrow">¶</a></p>
+<p id="section-1.3.7-1">Entropy headers are extension to traditional packet header that include information about the randomness of the packet's payload. These help distributing traffic more evenly in a multipath network, mitigating the risk of hotspots and potential congestion points.<a href="#section-1.3.7-1" class="pilcrow">¶</a></p>
+<p id="section-1.3.7-2">Entropy headers provide the advantage of being protected from in-path modification by making these headers non-updatable, ensuring the integrity of load balancing decisions. However, this approach raises privacy concerns as the entropy information may reveal patterns about the payload content or application behavior that could be exploited by network observers.<a href="#section-1.3.7-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="tunnelling-of-explicit-congestion-notificationecn">
-<section id="section-1.4.8">
+<section id="section-1.3.8">
           <h4 id="name-8-tunnelling-of-explicit-co">
-<a href="#section-1.4.8" class="section-number selfRef">1.4.8. </a><a href="#name-8-tunnelling-of-explicit-co" class="section-name selfRef">8. Tunnelling of Explicit Congestion Notification(ECN)</a>
+<a href="#section-1.3.8" class="section-number selfRef">1.3.8. </a><a href="#name-8-tunnelling-of-explicit-co" class="section-name selfRef">8. Tunnelling of Explicit Congestion Notification(ECN)</a>
           </h4>
-<p id="section-1.4.8-1">Addition of ECN to IP <span>[<a href="#RFC3168" class="cite xref">RFC3168</a>]</span> paved the way for much optimization in managing queues based on these marking. <span>[<a href="#RFC6040" class="cite xref">RFC6040</a>]</span> describes the problems related to obscured original ECN markings in tunneled traffic. It proposes a standard for tunnels to propagate an extra level of congestion severity.<a href="#section-1.4.8-1" class="pilcrow">¶</a></p>
-<p id="section-1.4.8-2">ECN tunneling benefits from having existing standards that provide a foundation for implementation and interoperability across different network equipment vendors. However, the approach becomes significantly more complicated when dealing with nested tunnels, where multiple layers of ECN marking can create conflicts and require complex processing to maintain proper congestion signaling.<a href="#section-1.4.8-2" class="pilcrow">¶</a></p>
+<p id="section-1.3.8-1">Addition of ECN to IP <span>[<a href="#RFC3168" class="cite xref">RFC3168</a>]</span> paved the way for much optimization in managing queues based on these marking. <span>[<a href="#RFC6040" class="cite xref">RFC6040</a>]</span> describes the problems related to obscured original ECN markings in tunneled traffic. It proposes a standard for tunnels to propagate an extra level of congestion severity.<a href="#section-1.3.8-1" class="pilcrow">¶</a></p>
+<p id="section-1.3.8-2">ECN tunneling benefits from having existing standards that provide a foundation for implementation and interoperability across different network equipment vendors. However, the approach becomes significantly more complicated when dealing with nested tunnels, where multiple layers of ECN marking can create conflicts and require complex processing to maintain proper congestion signaling.<a href="#section-1.3.8-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="flow-labelling-or-classification-for-traffic-steering">
-<section id="section-1.4.9">
+<section id="section-1.3.9">
           <h4 id="name-9-flow-labelling-or-classif">
-<a href="#section-1.4.9" class="section-number selfRef">1.4.9. </a><a href="#name-9-flow-labelling-or-classif" class="section-name selfRef">9. Flow labelling or classification for traffic steering</a>
+<a href="#section-1.3.9" class="section-number selfRef">1.3.9. </a><a href="#name-9-flow-labelling-or-classif" class="section-name selfRef">9. Flow labelling or classification for traffic steering</a>
           </h4>
-<p id="section-1.4.9-1">Flow labeling and classification approaches provide the significant advantage of enabling the application of artificially intelligent machine learning models for sophisticated traffic analysis and optimization, allowing for adaptive and predictive traffic management. However, this approach can compromise privacy by potentially exposing sensitive information about user behavior, application usage patterns, and business processes through the classification metadata.<a href="#section-1.4.9-1" class="pilcrow">¶</a></p>
+<p id="section-1.3.9-1">Flow labeling and classification approaches provide the significant advantage of enabling the application of artificially intelligent machine learning models for sophisticated traffic analysis and optimization, allowing for adaptive and predictive traffic management. However, this approach can compromise privacy by potentially exposing sensitive information about user behavior, application usage patterns, and business processes through the classification metadata.<a href="#section-1.3.9-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
 </div>
 </section>
 </div>
-<div id="proposal-to-standardise-the-selection-algorithm">
+<div id="proposal-to-standardize-the-selection-algorithm">
 <section id="section-2">
-      <h2 id="name-proposal-to-standardise-the">
-<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-proposal-to-standardise-the" class="section-name selfRef">Proposal to standardise the selection algorithm</a>
+      <h2 id="name-proposal-to-standardize-the">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-proposal-to-standardize-the" class="section-name selfRef">Proposal to standardize the selection algorithm</a>
       </h2>
 <p id="section-2-1">The VPN can be considered a limited premium network that protects confidential information of an organization such as business communication between retail stores. Hybrid work and move towards private access has increased the interest in tunneling traffic between endpoints. However at present, the traffic steering decision is made in a limited scoped or rule based manner which is different for various networks and service providers. Instead an alternative dynamic strategy is proposed which gauges the confidence in the various available options dynamically and may choose to send data directly via edge gateway, use one or more of the available tunnels or create a new on-demand tunnel, leveraging any of the tunneling protocols best suited.<a href="#section-2-1" class="pilcrow">¶</a></p>
 <p id="section-2-2">By dynamically deciding the tunnel type for a stream or packet, we could avoid the non-performing or counter-productive use-cases such as
@@ -2380,58 +2257,10 @@ algorithm_weights:
       - "packet_loss &gt; 1%"
       - "availability &lt; sla_requirement"
 ```<a href="#section-2.2.3-6" class="pilcrow">¶</a></p>
-<p id="section-2.2.3-7">[Figure: Algorithm flow diagram - shows the complete path selection algorithm decision flow]
-```
-Congestion-Aware Multipath Tunnel Selection Algorithm
-=====================================================<a href="#section-2.2.3-7" class="pilcrow">¶</a></p>
-<p id="section-2.2.3-8">Input Parameters                    Decision Making Algorithm                Output
-================                    ========================                ======<a href="#section-2.2.3-8" class="pilcrow">¶</a></p>
-<p id="section-2.2.3-9">Bandwidth ─────────────────────┐
-                               │
-Network State ─────────────────┤
-                               │    ┌─────────────────────────────────┐
-Vulnerability of data ─────────┤────┤                                 │
-                               │    │    Decision Making Algorithm    │    Algorithm's
-Time sensitivity of data ──────┤────┤                                 │──► Suggested
-                               │    │  ┌─────────────────────────────┐ │    Path
-Sample dataframe ──────────────┤────┤  │                             │ │
-                               │    │  │  ┌─ n random pkt selector   │ │
-Provisioning domains ──────────┤────┤  │  │                          │ │
-                               │    │  │  └─ ? other process         │ │
-Criticality ───────────────────┤────┤  │     components              │ │
-                               │    │  │                             │ │
-Carbon footprint ──────────────┤────┤  └─────────────────────────────┘ │
-                               │    │                                 │
-Cost/available credits ────────┘    └─────────────────────────────────┘
-                                               │
-                                               ▼
-                                    Available Path Options
-                                    ======================
-                                               │
-                        ┌──────────────────────┼──────────────────────┐
-                        │                      │                      │
-                    ┌───▼───┐              ┌───▼───┐              ┌───▼───┐
-                    │UPLINK │              │TUNNEL │              │ ETC   │
-                    └───┬───┘              └───┬───┘              └───────┘
-                        │                      │
-              ┌─────────┼─────────┐           │
-              │         │         │           │
-          ┌───▼───┐ ┌───▼───┐ ┌───▼───┐   ┌───▼───┐
-          │Ethernet│ │Fibre  │ │Cellular│   │MASQUE │
-          └───────┘ └───────┘ └───────┘   └───┬───┘
-                                              │
-                                    ┌─────────┼─────────┐
-                                    │         │         │
-                                ┌───▼───┐ ┌───▼───┐ ┌───▼───┐
-                                │Network│ │Direct/│ │  ...  │
-                                │Tunnel │ │Split  │ │       │
-                                │       │ │Tunnel │ │       │
-                                └───────┘ └───────┘ └───────┘
-```<a href="#section-2.2.3-9" class="pilcrow">¶</a></p>
-<p id="section-2.2.3-10">Prior work that standardized algorithms for networking include:<a href="#section-2.2.3-10" class="pilcrow">¶</a></p>
+<p id="section-2.2.3-7">Prior work that standardized algorithms for networking include:<a href="#section-2.2.3-7" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-2.2.3-11.1">
-              <p id="section-2.2.3-11.1.1">Happy Eyeballs <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> and Happy Eyeballs Version 2 <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> algorithms for dual-stack hosts<a href="#section-2.2.3-11.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-2.2.3-8.1">
+              <p id="section-2.2.3-8.1.1">Happy Eyeballs <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> and Happy Eyeballs Version 2 <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> algorithms for dual-stack hosts<a href="#section-2.2.3-8.1.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
 </section>
@@ -2533,641 +2362,25 @@ Provisioning domains: 0.5 ─────────┤     │  • Adequate b
                                    │     │  • Direct path preferred    │
 Criticality: 0.7 ──────────────────┤     │                             │
                                    │     └─────────────────────────────┘
-Carbon footprint: null ────────────┤                   │
-                                   │                   │
-Cost/available credits: unlimited ──┘                   ▼
-                                              Path Selection Logic
-                                              ===================
-                                                       │
-                                    ┌──────────────────┼──────────────────┐
-                                    │                  │                  │
-                                ┌───▼───┐          ┌───▼───┐          ┌───▼───┐
-                                │UPLINK │          │TUNNEL │          │OTHER  │
-                                │       │          │       │          │       │
-                                └───┬───┘          └───┬───┘          └───────┘
-                                    │                  │
-                          ┌─────────┼─────────┐       │
-                          │         │         │       │
-                      ┌───▼───┐ ┌───▼───┐ ┌───▼───┐   │
-                      │Broad- │ │Ether- │ │Cellular│   │
-                      │ band  │ │ net   │ │        │   │
-                      └───────┘ └───█───┘ └───────┘   │
-                                     │                │
-                                  SELECTED            │
-                                                      │
-                                              ┌───────┼───────┐
-                                              │       │       │
-                                          ┌───▼───┐ ┌─▼─┐ ┌───▼───┐
-                                          │MASQUE │ │N/T│ │Direct/│
-                                          │       │ │   │ │Split  │
-                                          └───────┘ └───┘ └───────┘
-                                                           NOT USED
-                                                          (Too high
-                                                           latency)<a href="#section-2.6-5" class="pilcrow">¶</a></p>
-</section>
-</div>
-</section>
-</div>
-<div id="decision-rationale">
-<section id="section-3">
-      <h2 id="name-decision-rationale">
-<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-decision-rationale" class="section-name selfRef">Decision Rationale:</a>
-      </h2>
-<p id="section-3-1">✓ Gaming traffic requires ultra-low latency
-✓ Vulnerability score (0.9) acceptable for gaming data
-✓ Direct ethernet provides lowest latency path
-✓ No tunneling overhead needed for multiplayer games
-✓ Cost not a factor (unlimited credits)
-✗ Tunneling rejected due to added latency
-```<a href="#section-3-1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-3-2.1">
-          <p id="section-3-2.1.1">Example 2 :  VoIP signaling traffic in case of E911 benefit from direct non-tunneled setup such as shown below. Additionally the media could be shared on WebRTC’s SRTP/DTLS format which creates a peer-to-peer path to tunnel media traffic.
-[Figure 2: Example 2 - VoIP E911 direct signaling with WebRTC P2P media path]<a href="#section-3-2.1.1" class="pilcrow">¶</a></p>
-</li>
-        <li class="normal" id="section-3-2.2">
-          <p id="section-3-2.2.1">Example 3 : SIP trunk calls may actually benefit from a dedicated IPSec tunnel, pre NATed, pre authenticated and secure, as it would avoid the delay in resetting the path given the volume of calls expected between two endpoints.
-[Figure 3: Example 3 - SIP trunk calls over dedicated IPSec tunnel]<a href="#section-3-2.2.1" class="pilcrow">¶</a></p>
-</li>
-        <li class="normal" id="section-3-2.3">
-          <p id="section-3-2.3.1">Example 4 : Heavy file downloads such as VoD could benefit by load sharing between multiple tunnels.
-```
-Example 4: Media Streaming using CDN - Load Sharing Across Multiple Tunnels
-===========================================================================<a href="#section-3-2.3.1" class="pilcrow">¶</a></p>
-</li>
-      </ul>
-<p id="section-3-3">Input Parameters (VoD/Streaming)       Selection Algorithm              Output Decision
-====================================    ===================              ===============<a href="#section-3-3" class="pilcrow">¶</a></p>
-<p id="section-3-4">Bandwidth: 100Mbps ─────────────────┐
-                                    │
-Network State: ────────────────────┐│
-  • 0.1 jitter                     ││   ┌─────────────────────────────┐
-  • 60ms RTT                       ││   │                             │
-  • 0.3 loss                       ┌┴┴───┤    Selection Algorithm      │    MASQUE
-                                   │     │                             │──► Multi-tunnel
-Vulnerability of data: 0.8 ────────┤     │  Media Streaming Detected:  │    Load Sharing
-                                   │     │  • Bulk transfer suitable   │
-Time sensitivity: 0.5 ─────────────┤─────┤  • High bandwidth needed    │
-                                   │     │  • Load sharing beneficial  │
-Provisioning domains: VoIP ────────┤     │  • Multiple paths optimal   │
-                                   │     │                             │
-Criticality: 0.4 ──────────────────┤     └─────────────────────────────┘
-                                   │                   │
-Carbon footprint: 0.5 ─────────────┤                   │
-                                   │                   ▼
-Cost/available credits: 0.8 ───────┘           Path Selection Logic
-                                              ===================
-                                                       │
-                                    ┌──────────────────┼──────────────────┐
-                                    │                  │                  │
-                                ┌───▼───┐          ┌───▼───┐          ┌───▼───┐
-                                │UPLINK │          │TUNNEL │          │OTHER  │
-                                │       │          │       │          │       │
-                                └───┬───┘          └───█───┘          └───────┘
-                                    │                  │
-                          ┌─────────┼─────────┐       │ SELECTED
-                          │         │         │       │
-                      ┌───▼───┐ ┌───▼───┐ ┌───▼───┐   │
-                      │Broad- │ │Ether- │ │Cellular│   │
-                      │ band  │ │ net   │ │        │   │
-                      └───█───┘ └───█───┘ └───█───┘   │
-                           │        │        │        │
-                        ALL USED FOR LOAD SHARING     │
-                                                      │
-                                              ┌───────┼───────┐
-                                              │       │       │
-                                          ┌───▼───┐ ┌─▼─┐ ┌───▼───┐
-                                          │MASQUE │ │N/T│ │Direct/│
-                                          │ ████  │ │   │ │Split  │
-                                          └───────┘ └───┘ └───────┘
-                                           SELECTED<a href="#section-3-4" class="pilcrow">¶</a></p>
-</section>
-</div>
-<div id="load-sharing-strategy">
-<section id="section-4">
-      <h2 id="name-load-sharing-strategy">
-<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-load-sharing-strategy" class="section-name selfRef">Load Sharing Strategy:</a>
-      </h2>
-<p id="section-4-1">┌─────────────────────────────────────────────────────────────────┐
-│                    VoD Content Distribution                     │
-├─────────────────────────────────────────────────────────────────┤
-│  Broadband ──┐                                                 │
-│              ├──► MASQUE Tunnel 1 ──┐                          │
-│  Ethernet ───┤                      ├──► Combined VoD Stream   │
-│              ├──► MASQUE Tunnel 2 ──┤                          │
-│  Cellular ───┘                      └──► to CDN/Client         │
-│                                                                 │
-│  Benefits:                                                      │
-│  • Aggregate bandwidth from all paths                          │
-│  • Resilience against single path failure                      │
-│  • Optimal for large file transfers                            │
-│  • CDN-friendly multiplexed streams                            │
-└─────────────────────────────────────────────────────────────────┘<a href="#section-4-1" class="pilcrow">¶</a></p>
-</section>
-</div>
-<div id="decision-rationale-1">
-<section id="section-5">
-      <h2 id="name-decision-rationale-2">
-<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-decision-rationale-2" class="section-name selfRef">Decision Rationale:</a>
-      </h2>
-<p id="section-5-1">✓ Large bandwidth requirement suits multi-path approach
-✓ Low time sensitivity (0.5) allows for tunnel overhead
-✓ MASQUE enables efficient stream multiplexing
-✓ Load sharing maximizes available bandwidth
-✓ Resilient to individual path degradation
-✓ Cost-effective use of multiple uplinks
-✗ Single direct path insufficient for VoD bandwidth needs
-```<a href="#section-5-1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-5-2.1">
-          <p id="section-5-2.1.1">Example 5 : Management Information Base(MiB) for Internet Small Computer System Interface (iSCSI) can be sent over IpSec Tunnel for longer haul networks such as accross datacentres.<a href="#section-5-2.1.1" class="pilcrow">¶</a></p>
-</li>
-      </ul>
-<div id="edge-cases">
-<section id="section-5.1">
-        <h3 id="name-edge-cases">
-<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-edge-cases" class="section-name selfRef">Edge cases</a>
-        </h3>
-<ul class="normal">
-<li class="normal" id="section-5.1-1.1">
-            <p id="section-5.1-1.1.1">Missing Datapoints : In the edge case where  there are no other data points to compute the selection logic then every avaiable concurrent path would get a weighted proportion of traffic based on its bandwidth cap. For example if a system has 2 uplinks capable of tunneling trafic with 25Mbps and 75Mbps then uplink 1 will get 25% of the flows while uplink 2 gets 75%.<a href="#section-5.1-1.1.1" class="pilcrow">¶</a></p>
-</li>
-          <li class="normal" id="section-5.1-1.2">
-            <p id="section-5.1-1.2.1">Fail over : In the case, 1 out of the 2 uplink paths being monitored by the algorithm fail, it would then attempt to shape the traffic such that 100% of the load ends up on the same uplink. Note that even on the same uplink the algorithm can suggest different protocols such as Network tunnel, aplication specific tunnel over HTTP proxy or even open access based on the data points.<a href="#section-5.1-1.2.1" class="pilcrow">¶</a></p>
-</li>
-        </ul>
-<div id="integration-with-tsvwg-standards">
-<section id="section-5.1.1">
-          <h4 id="name-integration-with-tsvwg-stan">
-<a href="#section-5.1.1" class="section-number selfRef">5.1.1. </a><a href="#name-integration-with-tsvwg-stan" class="section-name selfRef">Integration with TSVWG Standards</a>
-          </h4>
-<p id="section-5.1.1-1">The congestion control approach aligns with current TSVWG work:<a href="#section-5.1.1-1" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-5.1.1-2">
-<li id="section-5.1.1-2.1">
-              <p id="section-5.1.1-2.1.1"><strong>NQB PHB Compatibility</strong>: The algorithm can identify and properly handle Non-Queue-Building (NQB) traffic that should not be subjected to aggressive congestion control.<a href="#section-5.1.1-2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-5.1.1-2.2">
-              <p id="section-5.1.1-2.2.1"><strong>Careful Resume Principles</strong>: When switching paths or resuming connections, the algorithm implements careful congestion control restart procedures to avoid traffic bursts.<a href="#section-5.1.1-2.2.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-5.1.1-2.3">
-              <p id="section-5.1.1-2.3.1"><strong>L4S ECN Handling</strong>: The system supports Low Latency, Low Loss, and Scalable Throughput (L4S) ECN markings for appropriate traffic classification.<a href="#section-5.1.1-2.3.1" class="pilcrow">¶</a></p>
-</li>
-          </ol>
-</section>
-</div>
-</section>
-</div>
-</section>
-</div>
-<div id="conventions-and-definitions">
-<section id="section-6">
-      <h2 id="name-conventions-and-definitions">
-<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-conventions-and-definitions" class="section-name selfRef">Conventions and Definitions</a>
-      </h2>
-<p id="section-6-1">The key words "<span class="bcp14">MUST</span>", "<span class="bcp14">MUST NOT</span>", "<span class="bcp14">REQUIRED</span>", "<span class="bcp14">SHALL</span>", "<span class="bcp14">SHALL NOT</span>", "<span class="bcp14">SHOULD</span>", "<span class="bcp14">SHOULD NOT</span>", "<span class="bcp14">RECOMMENDED</span>", "<span class="bcp14">NOT RECOMMENDED</span>",
-"<span class="bcp14">MAY</span>", and "<span class="bcp14">OPTIONAL</span>" in this document are to be interpreted as
-described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they
-appear in all capitals, as shown here.<a href="#section-6-1" class="pilcrow">¶</a></p>
-<div id="terminology">
-<section id="section-6.1">
-        <h3 id="name-terminology">
-<a href="#section-6.1" class="section-number selfRef">6.1. </a><a href="#name-terminology" class="section-name selfRef">Terminology</a>
-        </h3>
-<p id="section-6.1-1">This document uses the following terms:<a href="#section-6.1-1" class="pilcrow">¶</a></p>
-<p id="section-6.1-2"><strong>Congestion-Aware Path Selection</strong>: A mechanism that considers congestion indicators, including ECN markings and queue delays, when choosing among multiple available network paths.<a href="#section-6.1-2" class="pilcrow">¶</a></p>
-<p id="section-6.1-3"><strong>Nested Tunneling</strong>: The practice of encapsulating one tunnel protocol within another, potentially leading to multiple layers of congestion control mechanisms.<a href="#section-6.1-3" class="pilcrow">¶</a></p>
-<p id="section-6.1-4"><strong>Transport-Layer Tunnel</strong>: A tunnel that operates at the transport layer, such as QUIC-based tunnels via MASQUE, as opposed to network-layer tunnels like IPsec.<a href="#section-6.1-4" class="pilcrow">¶</a></p>
-<p id="section-6.1-5"><strong>ECN Compatibility Mode</strong>: A mode of operation where tunnel endpoints properly propagate ECN markings according to <span>[<a href="#RFC6040" class="cite xref">RFC6040</a>]</span> and <span>[<a href="#RFC9599" class="cite xref">RFC9599</a>]</span> guidelines.<a href="#section-6.1-5" class="pilcrow">¶</a></p>
-<p id="section-6.1-6"><strong>Non-Queue-Building (NQB) Traffic</strong>: Traffic that does not contribute to persistent queue build-up, as defined in the TSVWG NQB PHB specification.<a href="#section-6.1-6" class="pilcrow">¶</a></p>
-<p id="section-6.1-7"><strong>Careful Resume</strong>: The practice of carefully restarting congestion control algorithms when resuming connections, avoiding sudden traffic bursts that could cause congestion.<a href="#section-6.1-7" class="pilcrow">¶</a></p>
-<p id="section-6.1-8"><strong>Path Characteristics Vector</strong>: A multi-dimensional representation of path properties including bandwidth, latency, loss rate, congestion indicators, and tunnel overhead.<a href="#section-6.1-8" class="pilcrow">¶</a></p>
-<p id="section-6.1-9"><strong>Transport Service Selection</strong>: The process of choosing appropriate transport protocols and parameters based on application requirements and network conditions.<a href="#section-6.1-9" class="pilcrow">¶</a></p>
-</section>
-</div>
-</section>
-</div>
-<div id="security">
-<section id="section-7">
-      <h2 id="name-security-considerations">
-<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
-      </h2>
-<p id="section-7-1">This section analyzes security implications of congestion-aware multipath tunnel selection, addressing both transport-layer security concerns and privacy considerations.<a href="#section-7-1" class="pilcrow">¶</a></p>
-<div id="trust-model-and-authentication">
-<section id="section-7.1">
-        <h3 id="name-trust-model-and-authenticat">
-<a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-trust-model-and-authenticat" class="section-name selfRef">Trust Model and Authentication</a>
-        </h3>
-<div id="tunnel-endpoint-authentication">
-<section id="section-7.1.1">
-          <h4 id="name-tunnel-endpoint-authenticat">
-<a href="#section-7.1.1" class="section-number selfRef">7.1.1. </a><a href="#name-tunnel-endpoint-authenticat" class="section-name selfRef">Tunnel Endpoint Authentication</a>
-          </h4>
-<p id="section-7.1.1-1">The algorithm requires proper authentication of tunnel endpoints to prevent man-in-the-middle attacks. Implementations <span class="bcp14">MUST</span>:<a href="#section-7.1.1-1" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7.1.1-2">
-<li id="section-7.1.1-2.1">
-              <p id="section-7.1.1-2.1.1">Verify tunnel endpoint certificates using standard PKI validation<a href="#section-7.1.1-2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.1.1-2.2">
-              <p id="section-7.1.1-2.2.1">Implement proper key exchange mechanisms for each supported tunneling protocol<a href="#section-7.1.1-2.2.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.1.1-2.3">
-              <p id="section-7.1.1-2.3.1">Maintain separate security associations for different paths to prevent cross-contamination<a href="#section-7.1.1-2.3.1" class="pilcrow">¶</a></p>
-</li>
-          </ol>
-</section>
-</div>
-<div id="metrics-integrity">
-<section id="section-7.1.2">
-          <h4 id="name-metrics-integrity">
-<a href="#section-7.1.2" class="section-number selfRef">7.1.2. </a><a href="#name-metrics-integrity" class="section-name selfRef">Metrics Integrity</a>
-          </h4>
-<p id="section-7.1.2-1">Path selection metrics used by the algorithm may be subject to manipulation:<a href="#section-7.1.2-1" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7.1.2-2">
-<li id="section-7.1.2-2.1">
-              <p id="section-7.1.2-2.1.1"><strong>ECN Marking Spoofing</strong>: Adversaries may manipulate ECN markings to influence path selection decisions. Implementations <span class="bcp14">SHOULD</span> validate ECN markings against other congestion indicators.<a href="#section-7.1.2-2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.1.2-2.2">
-              <p id="section-7.1.2-2.2.1"><strong>RTT Manipulation</strong>: Network attackers may artificially inflate or deflate RTT measurements. The algorithm <span class="bcp14">SHOULD</span> use multiple measurement techniques and outlier detection.<a href="#section-7.1.2-2.2.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.1.2-2.3">
-              <p id="section-7.1.2-2.3.1"><strong>Bandwidth Estimation Attacks</strong>: False bandwidth estimates can lead to suboptimal path selection. Implementations <span class="bcp14">SHOULD</span> cross-validate bandwidth measurements from multiple sources.<a href="#section-7.1.2-2.3.1" class="pilcrow">¶</a></p>
-</li>
-          </ol>
-</section>
-</div>
-</section>
-</div>
-<div id="privacy-considerations">
-<section id="section-7.2">
-        <h3 id="name-privacy-considerations">
-<a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-privacy-considerations" class="section-name selfRef">Privacy Considerations</a>
-        </h3>
-<div id="traffic-analysis-risks">
-<section id="section-7.2.1">
-          <h4 id="name-traffic-analysis-risks">
-<a href="#section-7.2.1" class="section-number selfRef">7.2.1. </a><a href="#name-traffic-analysis-risks" class="section-name selfRef">Traffic Analysis Risks</a>
-          </h4>
-<p id="section-7.2.1-1">The path selection algorithm may inadvertently leak information about traffic patterns:<a href="#section-7.2.1-1" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7.2.1-2">
-<li id="section-7.2.1-2.1">
-              <p id="section-7.2.1-2.1.1"><strong>Path Selection Patterns</strong>: Consistent path choices for specific applications may reveal user behavior. Implementations <span class="bcp14">SHOULD</span> introduce controlled randomization in path selection for equivalent paths.<a href="#section-7.2.1-2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.2.1-2.2">
-              <p id="section-7.2.1-2.2.1"><strong>Metric Collection Privacy</strong>: Collection of network metrics may expose sensitive information about user location and network topology. Implementations <span class="bcp14">MUST</span> minimize metric collection and implement proper data anonymization.<a href="#section-7.2.1-2.2.1" class="pilcrow">¶</a></p>
-</li>
-          </ol>
-</section>
-</div>
-<div id="split-tunneling-security">
-<section id="section-7.2.2">
-          <h4 id="name-split-tunneling-security">
-<a href="#section-7.2.2" class="section-number selfRef">7.2.2. </a><a href="#name-split-tunneling-security" class="section-name selfRef">Split Tunneling Security</a>
-          </h4>
-<p id="section-7.2.2-1">Split tunneling decisions present particular security challenges:<a href="#section-7.2.2-1" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7.2.2-2">
-<li id="section-7.2.2-2.1">
-              <p id="section-7.2.2-2.1.1"><strong>Enterprise Policy Bypass</strong>: Split tunneling may bypass corporate firewall rules and threat prevention systems. Enterprise deployments <span class="bcp14">MUST</span> implement policy controls that override algorithm decisions when necessary.<a href="#section-7.2.2-2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.2.2-2.2">
-              <p id="section-7.2.2-2.2.1"><strong>Traffic Correlation</strong>: Non-tunneled traffic may be subject to analysis by ISPs or government surveillance. Users <span class="bcp14">MUST</span> be informed when traffic is sent outside tunnel protection.<a href="#section-7.2.2-2.2.1" class="pilcrow">¶</a></p>
-</li>
-          </ol>
-</section>
-</div>
-</section>
-</div>
-<div id="transport-security-integration">
-<section id="section-7.3">
-        <h3 id="name-transport-security-integrat">
-<a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-transport-security-integrat" class="section-name selfRef">Transport Security Integration</a>
-        </h3>
-<div id="nested-encryption-overhead">
-<section id="section-7.3.1">
-          <h4 id="name-nested-encryption-overhead">
-<a href="#section-7.3.1" class="section-number selfRef">7.3.1. </a><a href="#name-nested-encryption-overhead" class="section-name selfRef">Nested Encryption Overhead</a>
-          </h4>
-<p id="section-7.3.1-1">Multiple layers of encryption in nested tunnels create security and performance tradeoffs:<a href="#section-7.3.1-1" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7.3.1-2">
-<li id="section-7.3.1-2.1">
-              <p id="section-7.3.1-2.1.1"><strong>Cryptographic Overhead</strong>: Multiple encryption layers increase computational costs without proportional security benefits. The algorithm <span class="bcp14">SHOULD</span> favor end-to-end encryption over nested tunnel encryption where security policies permit.<a href="#section-7.3.1-2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.3.1-2.2">
-              <p id="section-7.3.1-2.2.1"><strong>Key Management Complexity</strong>: Managing keys for multiple tunnel layers increases attack surface. Implementations <span class="bcp14">SHOULD</span> consolidate key management where possible.<a href="#section-7.3.1-2.2.1" class="pilcrow">¶</a></p>
-</li>
-          </ol>
-</section>
-</div>
-<div id="ecn-security-implications">
-<section id="section-7.3.2">
-          <h4 id="name-ecn-security-implications">
-<a href="#section-7.3.2" class="section-number selfRef">7.3.2. </a><a href="#name-ecn-security-implications" class="section-name selfRef">ECN Security Implications</a>
-          </h4>
-<p id="section-7.3.2-1">ECN propagation in tunnels has security considerations:<a href="#section-7.3.2-1" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7.3.2-2">
-<li id="section-7.3.2-2.1">
-              <p id="section-7.3.2-2.1.1"><strong>Information Disclosure</strong>: ECN markings may reveal network topology information. Tunnel implementations <span class="bcp14">SHOULD</span> consider whether to preserve or sanitize ECN markings based on security policies.<a href="#section-7.3.2-2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.3.2-2.2">
-              <p id="section-7.3.2-2.2.1"><strong>Covert Channels</strong>: ECN fields may be used for covert communication. Implementations operating in high-security environments <span class="bcp14">SHOULD</span> monitor ECN field usage patterns.<a href="#section-7.3.2-2.2.1" class="pilcrow">¶</a></p>
-</li>
-          </ol>
-</section>
-</div>
-</section>
-</div>
-<div id="implementation-security">
-<section id="section-7.4">
-        <h3 id="name-implementation-security">
-<a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-implementation-security" class="section-name selfRef">Implementation Security</a>
-        </h3>
-<div id="algorithm-side-channels">
-<section id="section-7.4.1">
-          <h4 id="name-algorithm-side-channels">
-<a href="#section-7.4.1" class="section-number selfRef">7.4.1. </a><a href="#name-algorithm-side-channels" class="section-name selfRef">Algorithm Side Channels</a>
-          </h4>
-<p id="section-7.4.1-1">The path selection algorithm itself may create security vulnerabilities:<a href="#section-7.4.1-1" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7.4.1-2">
-<li id="section-7.4.1-2.1">
-              <p id="section-7.4.1-2.1.1"><strong>Timing Attacks</strong>: Path selection timing may reveal information about network conditions or user behavior. Implementations <span class="bcp14">SHOULD</span> use constant-time algorithms where feasible.<a href="#section-7.4.1-2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.4.1-2.2">
-              <p id="section-7.4.1-2.2.1"><strong>Resource Exhaustion</strong>: Malicious network conditions may cause the algorithm to consume excessive computational resources. Implementations <span class="bcp14">MUST</span> implement appropriate rate limiting and resource controls.<a href="#section-7.4.1-2.2.1" class="pilcrow">¶</a></p>
-</li>
-          </ol>
-</section>
-</div>
-<div id="configuration-security">
-<section id="section-7.4.2">
-          <h4 id="name-configuration-security">
-<a href="#section-7.4.2" class="section-number selfRef">7.4.2. </a><a href="#name-configuration-security" class="section-name selfRef">Configuration Security</a>
-          </h4>
-<p id="section-7.4.2-1">Proper configuration is critical for security:<a href="#section-7.4.2-1" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7.4.2-2">
-<li id="section-7.4.2-2.1">
-              <p id="section-7.4.2-2.1.1"><strong>Default Security Posture</strong>: Default configurations <span class="bcp14">SHOULD</span> prefer security over performance optimization.<a href="#section-7.4.2-2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.4.2-2.2">
-              <p id="section-7.4.2-2.2.1"><strong>Administrative Controls</strong>: Network administrators <span class="bcp14">MUST</span> have ability to override algorithm decisions for security-critical traffic.<a href="#section-7.4.2-2.2.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.4.2-2.3">
-              <p id="section-7.4.2-2.3.1"><strong>Audit and Logging</strong>: Implementations <span class="bcp14">SHOULD</span> log path selection decisions for security analysis and compliance purposes.<a href="#section-7.4.2-2.3.1" class="pilcrow">¶</a></p>
-</li>
-          </ol>
-</section>
-</div>
-</section>
-</div>
-<div id="threat-model-considerations">
-<section id="section-7.5">
-        <h3 id="name-threat-model-considerations">
-<a href="#section-7.5" class="section-number selfRef">7.5. </a><a href="#name-threat-model-considerations" class="section-name selfRef">Threat Model Considerations</a>
-        </h3>
-<div id="adversary-capabilities">
-<section id="section-7.5.1">
-          <h4 id="name-adversary-capabilities">
-<a href="#section-7.5.1" class="section-number selfRef">7.5.1. </a><a href="#name-adversary-capabilities" class="section-name selfRef">Adversary Capabilities</a>
-          </h4>
-<p id="section-7.5.1-1">The security analysis assumes adversaries with the following capabilities:<a href="#section-7.5.1-1" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7.5.1-2">
-<li id="section-7.5.1-2.1">
-              <p id="section-7.5.1-2.1.1"><strong>Network Position</strong>: Adversaries may control network infrastructure elements along some paths<a href="#section-7.5.1-2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.5.1-2.2">
-              <p id="section-7.5.1-2.2.1"><strong>Traffic Injection</strong>: Adversaries may inject or modify packets on network paths<a href="#section-7.5.1-2.2.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.5.1-2.3">
-              <p id="section-7.5.1-2.3.1"><strong>Timing Analysis</strong>: Adversaries may observe traffic timing patterns<a href="#section-7.5.1-2.3.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.5.1-2.4">
-              <p id="section-7.5.1-2.4.1"><strong>Configuration Access</strong>: Adversaries may have limited access to system configuration<a href="#section-7.5.1-2.4.1" class="pilcrow">¶</a></p>
-</li>
-          </ol>
-</section>
-</div>
-<div id="protection-mechanisms">
-<section id="section-7.5.2">
-          <h4 id="name-protection-mechanisms">
-<a href="#section-7.5.2" class="section-number selfRef">7.5.2. </a><a href="#name-protection-mechanisms" class="section-name selfRef">Protection Mechanisms</a>
-          </h4>
-<p id="section-7.5.2-1">The proposed algorithm includes several protection mechanisms:<a href="#section-7.5.2-1" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7.5.2-2">
-<li id="section-7.5.2-2.1">
-              <p id="section-7.5.2-2.1.1"><strong>Multi-path Validation</strong>: Using multiple paths for validation reduces single points of failure<a href="#section-7.5.2-2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.5.2-2.2">
-              <p id="section-7.5.2-2.2.1"><strong>Adaptive Behavior</strong>: Dynamic algorithm behavior makes attacks more difficult to execute<a href="#section-7.5.2-2.2.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.5.2-2.3">
-              <p id="section-7.5.2-2.3.1"><strong>Fallback Mechanisms</strong>: Secure fallback options ensure availability even under attack<a href="#section-7.5.2-2.3.1" class="pilcrow">¶</a></p>
-</li>
-          </ol>
-</section>
-</div>
-</section>
-</div>
-<div id="iana">
-<section id="section-7.6">
-        <h3 id="name-iana-considerations">
-<a href="#section-7.6" class="section-number selfRef">7.6. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
-        </h3>
-<p id="section-7.6-1">This document makes the following requests to IANA:<a href="#section-7.6-1" class="pilcrow">¶</a></p>
-<div id="new-registry-for-path-selection-metrics">
-<section id="section-7.6.1">
-          <h4 id="name-new-registry-for-path-selec">
-<a href="#section-7.6.1" class="section-number selfRef">7.6.1. </a><a href="#name-new-registry-for-path-selec" class="section-name selfRef">New Registry for Path Selection Metrics</a>
-          </h4>
-<p id="section-7.6.1-1">This document requests the creation of a new registry titled "Congestion-Aware Path Selection Metrics" under the "Transport and Services" registry group. This registry will maintain standardized metric identifiers used by the path selection algorithm.<a href="#section-7.6.1-1" class="pilcrow">¶</a></p>
-<p id="section-7.6.1-2">Initial registry entries:<a href="#section-7.6.1-2" class="pilcrow">¶</a></p>
-<table class="center" id="table-1">
-            <caption><a href="#table-1" class="selfRef">Table 1</a></caption>
-<thead>
-              <tr>
-                <th class="text-left" rowspan="1" colspan="1">Metric ID</th>
-                <th class="text-left" rowspan="1" colspan="1">Metric Name</th>
-                <th class="text-left" rowspan="1" colspan="1">Description</th>
-                <th class="text-left" rowspan="1" colspan="1">Reference</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="text-left" rowspan="1" colspan="1">0x0001</td>
-                <td class="text-left" rowspan="1" colspan="1">ECN-CE-Ratio</td>
-                <td class="text-left" rowspan="1" colspan="1">Percentage of ECN CE marked packets</td>
-                <td class="text-left" rowspan="1" colspan="1">This Document</td>
-              </tr>
-              <tr>
-                <td class="text-left" rowspan="1" colspan="1">0x0002</td>
-                <td class="text-left" rowspan="1" colspan="1">RTT-Baseline</td>
-                <td class="text-left" rowspan="1" colspan="1">Baseline round-trip time measurement</td>
-                <td class="text-left" rowspan="1" colspan="1">This Document</td>
-              </tr>
-              <tr>
-                <td class="text-left" rowspan="1" colspan="1">0x0003</td>
-                <td class="text-left" rowspan="1" colspan="1">RTT-Variance</td>
-                <td class="text-left" rowspan="1" colspan="1">RTT variation coefficient</td>
-                <td class="text-left" rowspan="1" colspan="1">This Document</td>
-              </tr>
-              <tr>
-                <td class="text-left" rowspan="1" colspan="1">0x0004</td>
-                <td class="text-left" rowspan="1" colspan="1">Loss-Rate</td>
-                <td class="text-left" rowspan="1" colspan="1">Packet loss rate percentage</td>
-                <td class="text-left" rowspan="1" colspan="1">This Document</td>
-              </tr>
-              <tr>
-                <td class="text-left" rowspan="1" colspan="1">0x0005</td>
-                <td class="text-left" rowspan="1" colspan="1">Tunnel-Overhead</td>
-                <td class="text-left" rowspan="1" colspan="1">Tunnel encapsulation overhead bytes</td>
-                <td class="text-left" rowspan="1" colspan="1">This Document</td>
-              </tr>
-              <tr>
-                <td class="text-left" rowspan="1" colspan="1">0x0006</td>
-                <td class="text-left" rowspan="1" colspan="1">NQB-Classification</td>
-                <td class="text-left" rowspan="1" colspan="1">Non-Queue-Building traffic indicator</td>
-                <td class="text-left" rowspan="1" colspan="1">This Document</td>
-              </tr>
-            </tbody>
-          </table>
-</section>
-</div>
-<div id="updates-to-existing-registries">
-<section id="section-7.6.2">
-          <h4 id="name-updates-to-existing-registr">
-<a href="#section-7.6.2" class="section-number selfRef">7.6.2. </a><a href="#name-updates-to-existing-registr" class="section-name selfRef">Updates to Existing Registries</a>
-          </h4>
-<div id="quic-transport-parameter-registry">
-<section id="section-7.6.2.1">
-            <h5 id="name-quic-transport-parameter-re">
-<a href="#section-7.6.2.1" class="section-number selfRef">7.6.2.1. </a><a href="#name-quic-transport-parameter-re" class="section-name selfRef">QUIC Transport Parameter Registry</a>
-            </h5>
-<p id="section-7.6.2.1-1">If MASQUE tunneling is implemented using QUIC transport parameters, this document may require allocation of new transport parameter identifiers for:<a href="#section-7.6.2.1-1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-7.6.2.1-2.1">
-                <p id="section-7.6.2.1-2.1.1">Congestion-aware path selection capabilities<a href="#section-7.6.2.1-2.1.1" class="pilcrow">¶</a></p>
-</li>
-              <li class="normal" id="section-7.6.2.1-2.2">
-                <p id="section-7.6.2.1-2.2.1">ECN propagation mode negotiation<a href="#section-7.6.2.1-2.2.1" class="pilcrow">¶</a></p>
-</li>
-              <li class="normal" id="section-7.6.2.1-2.3">
-                <p id="section-7.6.2.1-2.3.1">Path characteristics vector exchange<a href="#section-7.6.2.1-2.3.1" class="pilcrow">¶</a></p>
-</li>
-            </ul>
-</section>
-</div>
-<div id="dscp-registry-considerations">
-<section id="section-7.6.2.2">
-            <h5 id="name-dscp-registry-consideration">
-<a href="#section-7.6.2.2" class="section-number selfRef">7.6.2.2. </a><a href="#name-dscp-registry-consideration" class="section-name selfRef">DSCP Registry Considerations</a>
-            </h5>
-<p id="section-7.6.2.2-1">While this document does not define new DSCP values, implementations should coordinate with the existing DSCP registry to ensure proper handling of:<a href="#section-7.6.2.2-1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-7.6.2.2-2.1">
-                <p id="section-7.6.2.2-2.1.1">NQB PHB markings (DSCP 45 as defined by TSVWG)<a href="#section-7.6.2.2-2.1.1" class="pilcrow">¶</a></p>
-</li>
-              <li class="normal" id="section-7.6.2.2-2.2">
-                <p id="section-7.6.2.2-2.2.1">ECN-capable tunnel endpoints<a href="#section-7.6.2.2-2.2.1" class="pilcrow">¶</a></p>
-</li>
-              <li class="normal" id="section-7.6.2.2-2.3">
-                <p id="section-7.6.2.2-2.3.1">L4S marking preservation through tunnels<a href="#section-7.6.2.2-2.3.1" class="pilcrow">¶</a></p>
-</li>
-            </ul>
-</section>
-</div>
-</section>
-</div>
-</section>
-</div>
-<div id="conclusions">
-<section id="section-7.7">
-        <h3 id="name-conclusions">
-<a href="#section-7.7" class="section-number selfRef">7.7. </a><a href="#name-conclusions" class="section-name selfRef">Conclusions</a>
-        </h3>
-<p id="section-7.7-1">This document addresses the significant challenges posed by multipath tunnel selection in modern transport networks, particularly focusing on congestion control conflicts and ECN handling in multipath and nested tunneling scenarios. The standardized approach provides several advantages by delivering consistency through uniform path selection behavior across heterogeneous network environments, achieving optimized global performance by reducing congestion control conflicts. The algorithmic approach scales better than static configuration-based methods and also facilitates vendor interoperability across diverse network infrastructures.<a href="#section-7.7-1" class="pilcrow">¶</a></p>
-<div id="technical-contributions">
-<section id="section-7.7.1">
-          <h4 id="name-technical-contributions">
-<a href="#section-7.7.1" class="section-number selfRef">7.7.1. </a><a href="#name-technical-contributions" class="section-name selfRef">Technical Contributions</a>
-          </h4>
-<ol start="1" type="1" class="normal type-1" id="section-7.7.1-1">
-<li id="section-7.7.1-1.1">
-              <p id="section-7.7.1-1.1.1"><strong>Congestion-Aware Algorithm</strong>: The proposed multipath tunnel selection algorithm incorporates ECN propagation principles from <span>[<a href="#RFC9599" class="cite xref">RFC9599</a>]</span>, ensuring proper congestion notification handling across tunnel boundaries.<a href="#section-7.7.1-1.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.7.1-1.2">
-              <p id="section-7.7.1-1.2.1"><strong>TSVWG Alignment</strong>: The approach aligns with current TSVWG work including Non-Queue-Building (NQB) PHB specifications, careful congestion control resume mechanisms, and multipath transport protocols.<a href="#section-7.7.1-1.2.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.7.1-1.3">
-              <p id="section-7.7.1-1.3.1"><strong>Transport Integration</strong>: The algorithm considers transport-layer characteristics and avoids the multilevel congestion control conflicts that plague current ad-hoc approaches.<a href="#section-7.7.1-1.3.1" class="pilcrow">¶</a></p>
-</li>
-          </ol>
-</section>
-</div>
-<div id="deployment-considerations">
-<section id="section-7.7.2">
-          <h4 id="name-deployment-considerations">
-<a href="#section-7.7.2" class="section-number selfRef">7.7.2. </a><a href="#name-deployment-considerations" class="section-name selfRef">Deployment Considerations</a>
-          </h4>
-<p id="section-7.7.2-1">Successful deployment of this mechanism requires gradual adoption. Also requires enterprise and regulatory policy frameworks that can override algorithmic decisions such as controls addressing privacy and authentication concerns.<a href="#section-7.7.2-1" class="pilcrow">¶</a></p>
-</section>
-</div>
-<div id="future-work">
-<section id="section-7.7.3">
-          <h4 id="name-future-work">
-<a href="#section-7.7.3" class="section-number selfRef">7.7.3. </a><a href="#name-future-work" class="section-name selfRef">Future Work</a>
-          </h4>
-<p id="section-7.7.3-1">Several areas warrant further investigation:<a href="#section-7.7.3-1" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7.7.3-2">
-<li id="section-7.7.3-2.1">
-              <p id="section-7.7.3-2.1.1"><strong>Machine Learning Integration</strong>: Advanced algorithms that can adapt to network patterns and predict optimal paths<a href="#section-7.7.3-2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.7.3-2.2">
-              <p id="section-7.7.3-2.2.1"><strong>Satellite Network Support</strong>: Specific adaptations for LEO/MEO satellite networks as identified in current TSVWG satellite work<a href="#section-7.7.3-2.2.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.7.3-2.3">
-              <p id="section-7.7.3-2.3.1"><strong>Energy Efficiency</strong>: Integration of carbon footprint and energy consumption metrics for sustainable networking<a href="#section-7.7.3-2.3.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.7.3-2.4">
-              <p id="section-7.7.3-2.4.1"><strong>Real-time Adaptation</strong>: Enhanced algorithms for rapid response to changing network conditions<a href="#section-7.7.3-2.4.1" class="pilcrow">¶</a></p>
-</li>
-          </ol>
-</section>
-</div>
-<div id="standards-impact">
-<section id="section-7.7.4">
-          <h4 id="name-standards-impact">
-<a href="#section-7.7.4" class="section-number selfRef">7.7.4. </a><a href="#name-standards-impact" class="section-name selfRef">Standards Impact</a>
-          </h4>
-<p id="section-7.7.4-1">This work contributes to the broader IETF transport standardization efforts:<a href="#section-7.7.4-1" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7.7.4-2">
-<li id="section-7.7.4-2.1">
-              <p id="section-7.7.4-2.1.1"><strong>Congestion Control Evolution</strong>: Advances understanding of congestion control in complex tunneling environments<a href="#section-7.7.4-2.1.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.7.4-2.2">
-              <p id="section-7.7.4-2.2.1"><strong>ECN Deployment</strong>: Provides practical guidance for ECN implementation in tunnel scenarios<a href="#section-7.7.4-2.2.1" class="pilcrow">¶</a></p>
-</li>
-            <li id="section-7.7.4-2.3">
-              <p id="section-7.7.4-2.3.1"><strong>Transport Services</strong>: Enhances the transport services framework with path selection capabilities<a href="#section-7.7.4-2.3.1" class="pilcrow">¶</a></p>
-</li>
-          </ol>
-<p id="section-7.7.4-3">The proposed congestion-aware multipath tunnel selection algorithm represents a significant step toward more intelligent and efficient network path utilization, providing a foundation for future transport protocol innovations while maintaining compatibility with existing infrastructure.<a href="#section-7.7.4-3" class="pilcrow">¶</a></p>
-</section>
-</div>
+```<a href="#section-2.6-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
 </div>
 <div id="sec-combined-references">
-<section id="section-8">
+<section id="section-3">
       <h2 id="name-references">
-<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-references" class="section-name selfRef">References</a>
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-references" class="section-name selfRef">References</a>
       </h2>
 <div id="sec-normative-references">
-<section id="section-8.1">
+<section id="section-3.1">
         <h3 id="name-normative-references">
-<a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
         </h3>
 <dl class="references">
 <dt id="RFC2119">[RFC2119]</dt>
         <dd>
-<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <time datetime="1997-03" class="refDate">March 1997</time>. </dd>
 <dd class="break"></dd>
 <dt id="RFC3168">[RFC3168]</dt>
         <dd>
@@ -3183,7 +2396,7 @@ appear in all capitals, as shown here.<a href="#section-6-1" class="pilcrow">¶<
 <dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
         <dd>
-<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <time datetime="2017-05" class="refDate">May 2017</time>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8305">[RFC8305]</dt>
         <dd>
@@ -3205,9 +2418,9 @@ appear in all capitals, as shown here.<a href="#section-6-1" class="pilcrow">¶<
 </section>
 </div>
 <div id="sec-informative-references">
-<section id="section-8.2">
+<section id="section-3.2">
         <h3 id="name-informative-references">
-<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
         </h3>
 <dl class="references">
 <dt id="CAREFUL-RESUME">[CAREFUL-RESUME]</dt>
@@ -3275,18 +2488,8 @@ appear in all capitals, as shown here.<a href="#section-6-1" class="pilcrow">¶<
 </div>
 </section>
 </div>
-<div id="acknowledgments">
-<section id="appendix-A">
-      <h2 id="name-acknowledgments">
-<a href="#name-acknowledgments" class="section-name selfRef">Acknowledgments</a>
-      </h2>
-<p id="appendix-A-1">The authors thank the Transport and Services Working Group (TSVWG) for their valuable feedback and guidance. Special acknowledgment goes to the contributors of <span>[<a href="#RFC9599" class="cite xref">RFC9599</a>]</span> for establishing the ECN handling guidelines that inform this work. The authors also acknowledge the ongoing work on NQB PHB, careful congestion control resume, and multipath transport protocols that provide the foundation for this specification.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
-<p id="appendix-A-2">Special thanks to Mark Townsley and Mark Bakke from Cisco for their insights on enterprise networking and SD-WAN deployment considerations. The authors are grateful to Mike Bishop from Akamai for his guidance on transport protocol optimization and congestion control mechanisms. Thanks also to Tommy Pauly from Apple for his valuable input on client-side implementation considerations and user experience aspects.<a href="#appendix-A-2" class="pilcrow">¶</a></p>
-<p id="appendix-A-3">Additional thanks will be added for reviewers and contributors who provide feedback on this document.<a href="#appendix-A-3" class="pilcrow">¶</a></p>
-</section>
-</div>
 <div id="authors-addresses">
-<section id="appendix-B">
+<section id="appendix-A">
       <h2 id="name-authors-address">
 <a href="#name-authors-address" class="section-name selfRef">Author's Address</a>
       </h2>
