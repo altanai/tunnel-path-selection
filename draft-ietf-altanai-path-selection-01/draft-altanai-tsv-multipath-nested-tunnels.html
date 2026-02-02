@@ -1,0 +1,2515 @@
+<!DOCTYPE html>
+<html lang="en" class="Internet-Draft">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>Congestion-Aware Multipath Tunnel Selection for Transport Services</title>
+<meta content="Altanai Bisht" name="author">
+<meta content="
+       This document addresses the transport-layer challenges of path selection in environments with multiple available tunneling options and congestion control mechanisms. It identifies congestion control conflicts that arise from nested tunneling protocols and proposes a congestion-aware multipath tunnel selection algorithm that conforms to the guidelines established in   for adding congestion notification to protocols that encapsulate IP. The proposed approach considers Explicit Congestion Notification (ECN) propagation, transport protocol characteristics, and network conditions to optimize path selection while avoiding multilevel congestion control issues. This work aligns with current Transport and Services Working Group efforts on Non-Queue-Building (NQB) behaviors, careful congestion control resume, and multipath transport protocols. 
+    " name="description">
+<meta content="xml2rfc 3.31.0" name="generator">
+<meta content="MASQUE" name="keyword">
+<meta content="VPN" name="keyword">
+<meta content="IPSec" name="keyword">
+<meta content="Congestion Control" name="keyword">
+<meta content="ECN" name="keyword">
+<meta content="Multipath" name="keyword">
+<meta content="Transport Services" name="keyword">
+<meta content="draft-altanai-tsv-multipath-nested-tunnels-latest" name="ietf.draft">
+<!-- Generator version information:
+  xml2rfc 3.31.0
+    Python 3.12.12
+    ConfigArgParse 1.7
+    google-i18n-address 3.1.1
+    intervaltree 3.2.1
+    Jinja2 3.1.6
+    lxml 6.0.2
+    platformdirs 4.5.1
+    pycountry 24.6.1
+    PyYAML 6.0.3
+    requests 2.32.5
+    wcwidth 0.3.0
+-->
+<link href="draft-altanai-tsv-multipath-nested-tunnels.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Lora SemiBold'), local('Lora-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-semibold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-greek.woff2') format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-greek.woff2') format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  color-scheme: light dark;
+  --background-color: #fff;
+  --text-color: #222;
+  --title-color: #191919;
+  --link-color: #2a6496;
+  --highlight-color: #f9f9f9;
+  --line-color: #eee;
+  --pilcrow-weak: #ddd;
+  --pilcrow-strong: #bbb;
+  --small-font-size: 14.5px;
+  --font-mono: 'Oxygen Mono', monospace;
+  --font-title: "Sofia Sans Semi Condensed", sans-serif;
+  scrollbar-color: #bbb #eee;
+}
+body {
+  max-width: 600px;
+  margin: 75px auto;
+  padding: 0 5px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  font: 16px/22px "Lora", serif;
+  scroll-behavior: smooth;
+}
+
+.ears {
+  display: none;
+}
+
+/* headings */
+section {
+  clear: both;
+}
+.section-number {
+  padding-right: 0.5em;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-title);
+  font-weight: 680;
+  margin: 0.8em 0 0.3em;
+  font-size-adjust: 0.5;
+  color: var(--title-color);
+}
+h1#title {
+  font-size: 32px;
+  line-height: 40px;
+  clear: both;
+}
+h1#title, h1#rfcnum {
+  margin: 1.5em 0 0.2em;
+}
+h1#rfcnum + h1#title {
+  margin: 0.2em 0;
+}
+
+h1, h2, h3 {
+  font-size: 22px;
+  line-height: 27px;
+}
+h4, h5, h6 {
+  font-size: 20px;
+  line-height: 24px;
+}
+
+/* general structure */
+.author {
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+#abstract+p {
+  font-size: 18px;
+  line-height: 24px;
+}
+#abstract+p code, #abstract+p samp, #abstract+p tt {
+  font-size: 16px;
+  line-height: 0;
+}
+
+p {
+  padding: 0;
+  margin: 0.5em 0;
+  text-align: left;
+}
+div {
+  margin: 0;
+}
+.alignRight.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignRight.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignRight {
+  margin: 1em 0;
+}
+.alignRight > *:first-child {
+  border: none;
+  margin: 0;
+  float: right;
+  clear: both;
+}
+.alignRight > *:nth-child(2) {
+  clear: both;
+  display: block;
+  border: none;
+}
+svg {
+  display: block;
+}
+/* font-family isn't space-separated, but =~ will have to do */
+svg[font-family~="monospace" i], svg [font-family~="monospace" i] {
+  font-family: var(--font-mono);
+}
+.alignCenter.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignCenter.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignCenter {
+  margin: 1em 0;
+}
+.alignCenter > *:first-child {
+  border: none;
+  /* this isn't optimal, but it's an existence proof.  PrinceXML doesn't
+     support flexbox yet.
+  */
+  display: table;
+  margin: 0 auto;
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 0.5em 2em;
+  & :is(ol, ul) {
+    margin-left: 1em;
+  }
+}
+li {
+  margin: 0 0 0.25em 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+  & li {
+    margin-top: 0.5em;
+  }
+}
+:is(ul, ol).compact, .ulCompact, .olCompact {
+  margin: 0 0 0 2em;
+  & li {
+    margin: 0;
+    & :first-child { margin-top: 0; }
+    & :last-child { margin-bottom: 0; }
+  }
+}
+
+/* definition lists */
+dl {
+  clear: left;
+  --indent: 3ch;
+  /* --indent: attr(indent ch); not supported in any browser, but we can dream */
+  &.olPercent {
+    --indent: 5ch;
+    & > dt {
+      min-width: calc(var(--indent) - 2ch);
+    }
+  }
+  &.olPercent > dt {
+    float: none;
+  }
+
+  dl > dd > & {
+    margin-top: 0.5em;
+    margin-bottom: 0;
+  }
+}
+dl:not(.dlNewline) > dt {
+  float: left;
+  margin-right: 2ch;
+  min-width: 8ch;
+}
+dl > dd {
+  margin-bottom: .8em;
+  margin-left: var(--indent) !important; /* stupid element overrides */
+  min-height: 2ex;
+}
+:is(dl.compact, .dlCompact) > dd {
+  margin-bottom: 0;
+  & > :is(:first-child, .break:first-child + *) {
+    margin-top: 0;
+  }
+  & > :is(:last-child) {
+    margin-bottom: 0;
+  }
+}
+:is(dd, span).break {
+  display: none;
+}
+
+/* links */
+a, a[href].selfRef:hover {
+  text-decoration: none;
+}
+a[href] {
+  color: var(--link-color);
+}
+a[href].selfRef, .iref + a[href].internal {
+  color: var(--text-color);
+}
+a[href]:hover {
+  text-decoration: underline;
+}
+a[href].selfRef:hover {
+  background-color: var(--highlight-color);
+}
+a.xref:is(.cite, .auto), :is(#status-of-memo, #copyright) a {
+  white-space: nowrap;
+}
+
+/* Figures */
+tt, code, pre {
+  background-color: var(--highlight-color);
+  font: 14px/22px var(--font-mono);
+}
+tt, code {
+  /* changing the font for inline elements leads to different ascender
+     and descender heights; as we want to retain baseline alignment,
+     remove leading to avoid altering the final height of lines
+     note: this fails if these blocks take an entire line,
+     a different solution would be great */
+  line-height: 0;
+}
+:is(h1, h2, h3, h4, h5, h6) :is(tt, code) {
+  font-size: 84%;
+}
+pre {
+  border: 1px solid var(--line-color);
+  font-size: 13.5px;
+  line-height: 16px;
+  letter-spacing: -0.2px;
+  margin: 5px;
+  padding: 5px;
+}
+img {
+  max-width: 100%;
+}
+figure {
+  margin: 0.5em 0;
+  padding: 0;
+}
+figure blockquote {
+  margin: 0.8em 0.4em 0.4em;
+}
+figcaption, caption {
+  font-style: italic;
+  margin: 0.5em 1.5em;
+  text-align: left;
+  caption-side: bottom;
+}
+@media screen {
+  /* Auto-collapse boilerplate. */
+  :is(#status-of-memo, #copyright) p {
+    margin: -2px 0;
+    max-height: 0;
+    transition: max-height 2s ease, margin 0.5s ease 0.5s;
+    overflow: hidden;
+  }
+  :is(#status-of-memo, #copyright):hover p,
+  :is(#status-of-memo, #copyright) h2:target ~ p {
+    margin: 0.5em 0;
+    max-height: 500px;
+    overflow: auto;
+  }
+  pre, svg {
+    display: inline-block;
+    /* In the horizontal direction, sometimes people make over-sized figures.
+       Scrollbars for those is therefore necessary: auto adds them as necessary..
+       In the vertical direction, the line-height can combine with the font
+       asender/descender height to produce scrollbars: hidden avoids that. */
+    overflow: auto hidden;
+  }
+  pre {
+    max-width: 100%;
+    width: calc(100% - 22px - 1em);
+  }
+  svg {
+    max-width: calc(100% - 22px - 1em);
+  }
+  figure pre {
+    display: block;
+    width: calc(100% - 25px);
+  }
+  :is(pre, svg) + .pilcrow {
+    display: inline-block;
+    vertical-align: text-bottom;
+    padding-bottom: 8px;
+  }
+}
+
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 0 2em;
+  font-style: italic;
+}
+blockquote {
+  margin: 1em 0;
+  border-left: 2px var(--pilcrow-strong) solid;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+
+/* tables */
+table {
+  width: auto;
+  max-width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+}
+table.right {
+  margin-left: auto;
+}
+table.center {
+  margin-left: auto;
+  margin-right: auto;
+}
+table.left {
+  margin-right: auto;
+}
+table .text-left {
+  text-align: left;
+}
+table .text-center {
+  text-align: center;
+}
+table .text-right {
+  text-align: right;
+}
+
+thead, tbody {
+  border: 1px solid var(--line-color);
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 5px 10px;
+}
+th {
+  background-color: var(--line-color);
+}
+:is(tr:nth-child(2n), thead+tbody > tr:nth-child(2n+1)) > td {
+  background-color: var(--background-color);
+}
+:is(tr:nth-child(2n+1), thead+tbody > tr:nth-child(2n)) > td {
+  background-color: var(--highlight-color);
+}
+table caption {
+  margin: 0;
+  padding: 3px 0 3px 1em;
+}
+table p {
+  margin: 0;
+}
+
+/* pilcrow */
+a.pilcrow {
+  margin-left: 3px;
+  opacity: 0.2;
+  user-select: none;
+  &[href] {
+    color: var(--pilcrow-weak);
+    &:hover { text-decoration: none; }
+  }
+}
+@media not print {
+  :hover > a.pilcrow, a.pilcrow:focus {
+    opacity: 1;
+  }
+  a.pilcrow[href]:hover {
+    color: var(--pilcrow-strong);
+    background-color: transparent;
+  }
+}
+@media print {
+  a.pilcrow {
+    display: none;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid var(--line-color);
+}
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: 600;
+  font-size: var(--small-font-size);
+}
+.role {
+  font-variant: all-small-caps;
+}
+sub, sup {
+  line-height: 1;
+  font-size: 80%;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: var(--small-font-size);
+  line-height: 18px;
+  --identifier-width: 15ch;
+  & dt {
+    width: var(--identifier-width);
+    min-width: var(--identifier-width);
+    clear: left;
+    float: left;
+    text-align: right;
+    margin-right: 1ch;
+  }
+  & dd {
+    margin: 0;
+    margin-left: calc(1em + var(--identifier-width)) !important;
+    min-width: 5em;
+  }
+  & .authors {
+    & .author {
+      display: inline-block;
+      margin-right: 1.5em;
+    }
+    & .org {
+      font-style: italic;
+    }
+  }
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #999;
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+}
+.docInfo .prepared {
+  float: right;
+}
+
+/* table of contents */
+#toc {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+
+  & nav {
+    & ul {
+      margin: 0 0.5em 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    & li {
+      line-height: 1.3em;
+      margin: 2px 0;
+      padding-left: 1.2em;
+      text-indent: -1.2em;
+    }
+  }
+  & a.xref {
+    white-space: normal;
+  }
+}
+
+.references {
+  & > dt {
+    text-align: right;
+    font-weight: bold;
+    min-width: 10ch;
+    margin-right: 1.5ch;
+    &:target::before {
+      content: "⇒";
+      margin: 0 10px 0 -25px;
+    }
+  }
+  & > dd {
+    margin-left: 12ch !important;
+    overflow: visible;
+    & .refInstance {
+      margin-bottom: 0.8em;
+    }
+    & .ascii {
+      margin-bottom: 0.25em;
+    }
+  }
+}
+
+#rfc\.index\.index + ul {
+  margin-left: 0;
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  max-width: 20em;
+  margin: 1em auto 1em 0;
+
+  & .nameRole {
+    font-weight: 700;
+    margin-left: 0;
+  }
+  & .label {
+    margin: 0.5em 0;
+  }
+  & .type {
+    display: none;
+  }
+  & .alternative-contact {
+    margin: 0.5em 0 0.25em 0;
+  }
+  & .non-ascii {
+    margin: 0 0 0 2em;
+  }
+  & div.left {
+    text-align: left;
+  }
+  & div.right {
+    text-align: right;
+  }
+}
+
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+@media (min-width: 500px) {
+  #authors-addresses > section {
+    column-count: 2;
+    column-gap: 20px;
+  }
+  #authors-addresses > section > h2 {
+    column-span: all;
+  }
+  /* hack for break-inside: avoid-column */
+  #authors-addresses address {
+    display: inline-block;
+    break-inside: avoid-column;
+  }
+}
+
+/* Comments */
+.rfcEditorRemove p:first-of-type {
+  font-style: italic;
+}
+.cref {
+  background-color: rgba(249, 232, 105, 0.3);
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+
+@media screen {
+  #toc nav {
+    font-family: var(--font-title);
+    font-weight: 360;
+    & > ul { margin-bottom: 2em; }
+    & ul {
+      margin: 0 0 0 4px;
+      & :is(p, li) {
+        margin: 2px 0;
+      }
+    }
+  }
+  #toc a.toplink {
+    float: right;
+  }
+}
+@media not screen {
+  #toc a.toplink {
+    display: none;
+  }
+}
+
+
+/* TOC layout for smaller screens */
+@media screen and (max-width: 929px) {
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 1px 0 0 0;
+    margin: 0;
+    border-bottom: 1px solid #ccc;
+    opacity: 0.6;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 2px 0 2px 6px;
+    padding-right: 1em;
+    font-size: 18px;
+    line-height: 24px;
+    min-width: 190px;
+    text-align: right;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+    &::before { /* css hamburger */
+      float: right;
+      position: relative;
+      width: 1em;
+      height: 1px;
+      left: -164px;
+      margin: 8px 0 0 0;
+      background: white none repeat scroll 0 0;
+      box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+      content: "";
+    }
+  }
+  #toc nav {
+    display: none;
+    background-color: var(--background-color);
+    padding: 0.5em 1em 1em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    height: calc(100vh - 48px);
+    border-left: 1px solid #ddd;
+  }
+  #toc.active {
+    opacity: 1;
+    & nav { display: block; }
+  }
+  /* Make the collapsed ToC header render white on gray also when it's a link */
+  #toc h2 a,
+  #toc h2 a:is(:link, :focus, :hover),
+  #toc a.toplink,
+  #toc a.toplink:hover {
+    color: white;
+    background-color: #444;
+    text-decoration: none;
+  }
+  #toc a.toplink {
+    margin: 2px 0.5em 0;
+  }
+}
+
+/* TOC layout for wide screens */
+@media screen and (min-width: 930px) {
+  body {
+    padding-right: 360px;
+    padding-right: calc(min(180px + 20%, 500px));
+  }
+  #toc {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    right: calc(50vw - 480px);
+    width: 312px;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 0.25em 1em 1em 0;
+  }
+  #toc nav {
+    display: block;
+    height: calc(90vh - 84px);
+    bottom: 0;
+    padding: 0.5em 0 2em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+  #toc a.toplink {
+    margin: 8px 0.5em 0;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc, #n-introduction {
+    page-break-before: always;
+  }
+  #toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  figure, pre, .vcard {
+    page-break-inside: avoid;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  :is(h2, h3, h4, h5, h6)+*, dd {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
+  }
+}
+
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
+  }
+  @top-center {
+    content: normal;
+    border: none;
+  }
+  @top-right {
+    content: normal;
+    border: none;
+  }
+}
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+}
+
+/* Dark mode. */
+@media (prefers-color-scheme: dark) {
+:root {
+  --background-color: #121212;
+  --text-color: #f0f0f0;
+  --title-color: #fff;
+  --link-color: #4da4f0;
+  --highlight-color: #282828;
+  --line-color: #444;
+  --pilcrow-weak: #444;
+  --pilcrow-strong: #666;
+  scrollbar-color: #777 #333;
+}
+}
+
+/* SVG Trick: a prefix match works because only black and white are allowed */
+svg :is([stroke="black"], [stroke^="#000"]) {
+  stroke: var(--text-color);
+}
+svg :is([stroke="white"], [stroke^="#fff"]) {
+  stroke: var(--background-color);
+}
+svg :is([fill="black"], [fill^="#000"], :not([fill])) {
+  fill: var(--text-color);
+}
+svg :is([fill="white"], [fill^="#fff"]) {
+  fill: var(--background-color);
+}
+</style>
+
+</head>
+<body class="xml2rfc">
+<table class="ears">
+<thead><tr>
+<td class="left">Internet-Draft</td>
+<td class="center">Multipath Tunnel Selection</td>
+<td class="right">October 2025</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">Bisht</td>
+<td class="center">Expires 17 April 2026</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">tsvwg</dd>
+<dt class="label-internet-draft">Internet-Draft:</dt>
+<dd class="internet-draft">draft-altanai-tsv-multipath-nested-tunnels-latest</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2025-10-14" class="published">14 October 2025</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Standards Track</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2026-04-17">17 April 2026</time></dd>
+<dt class="label-authors">Author:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">A. Bisht</div>
+<div class="org">Cisco Meraki</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">Congestion-Aware Multipath Tunnel Selection for Transport Services</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">This document addresses the transport-layer challenges of path selection in environments with multiple available tunneling options and congestion control mechanisms. It identifies congestion control conflicts that arise from nested tunneling protocols and proposes a congestion-aware multipath tunnel selection algorithm that conforms to the guidelines established in <span>[<a href="#RFC9599" class="cite xref">RFC9599</a>]</span> for adding congestion notification to protocols that encapsulate IP. The proposed approach considers Explicit Congestion Notification (ECN) propagation, transport protocol characteristics, and network conditions to optimize path selection while avoiding multilevel congestion control issues. This work aligns with current Transport and Services Working Group efforts on Non-Queue-Building (NQB) behaviors, careful congestion control resume, and multipath transport protocols.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+</section>
+<section class="note rfcEditorRemove" id="section-note.1">
+      <h2 id="name-about-this-document">
+<a href="#name-about-this-document" class="section-name selfRef">About This Document</a>
+      </h2>
+<p id="section-note.1-1">This note is to be removed before publishing as an RFC.<a href="#section-note.1-1" class="pilcrow">¶</a></p>
+<p id="section-note.1-2">
+        The latest revision of this draft can be found at <span><a href="https://altanai.github.io/multipath-nested-tunnels/draft-altanai-tsv-multipath_nested_tunnels.html">https://altanai.github.io/multipath-nested-tunnels/draft-altanai-tsv-multipath_nested_tunnels.html</a></span>.
+        Status information for this document may be found at <span><a href="https://datatracker.ietf.org/doc/draft-altanai-tsv-multipath-nested-tunnels/">https://datatracker.ietf.org/doc/draft-altanai-tsv-multipath-nested-tunnels/</a></span>.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
+<p id="section-note.1-3">
+        Discussion of this document takes place on the
+        tsvwg WG mailing list (<span><a href="mailto:tsvwg@ietf.org">mailto:tsvwg@ietf.org</a></span>),
+        which is archived at <span><a href="https://mailarchive.ietf.org/arch/browse/tsvwg/">https://mailarchive.ietf.org/arch/browse/tsvwg/</a></span>.
+        Subscribe at <span><a href="https://www.ietf.org/mailman/listinfo/tsvwg/">https://www.ietf.org/mailman/listinfo/tsvwg/</a></span>.<a href="#section-note.1-3" class="pilcrow">¶</a></p>
+<p id="section-note.1-4">Source for this draft and an issue tracker can be found at
+        <span><a href="https://github.com/altanai/multipath-nested-tunnels">https://github.com/altanai/multipath-nested-tunnels</a></span>.<a href="#section-note.1-4" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 17 April 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2025 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document. Code Components extracted from this
+            document must include Revised BSD License text as described in
+            Section 4.e of the Trust Legal Provisions and are provided without
+            warranty as described in the Revised BSD License.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.1">
+                <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="auto internal xref">1.1</a>.  <a href="#name-fundamental-differences-tun" class="internal xref">Fundamental Differences: Tunneled vs Non-Tunneled Traffic Path Selection</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.2">
+                <p id="section-toc.1-1.1.2.2.1"><a href="#section-1.2" class="auto internal xref">1.2</a>.  <a href="#name-current-path-selection-chal" class="internal xref">Current Path Selection Challenges</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.2.2.1">
+                    <p id="section-toc.1-1.1.2.2.2.1.1" class="keepWithNext"><a href="#section-1.2.1" class="auto internal xref">1.2.1</a>.  <a href="#name-vendor-interoperability-cha" class="internal xref">Vendor Interoperability Challenges</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.2.2.2">
+                    <p id="section-toc.1-1.1.2.2.2.2.1" class="keepWithNext"><a href="#section-1.2.2" class="auto internal xref">1.2.2</a>.  <a href="#name-the-need-for-standardizatio" class="internal xref">The Need for Standardization</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.2.2.3">
+                    <p id="section-toc.1-1.1.2.2.2.3.1"><a href="#section-1.2.3" class="auto internal xref">1.2.3</a>.  <a href="#name-multilevel-congestion-contr" class="internal xref">Multilevel Congestion Control and ECN Propagation</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.2.2.4">
+                    <p id="section-toc.1-1.1.2.2.2.4.1"><a href="#section-1.2.4" class="auto internal xref">1.2.4</a>.  <a href="#name-prioritization" class="internal xref">Prioritization</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3">
+                <p id="section-toc.1-1.1.2.3.1"><a href="#section-1.3" class="auto internal xref">1.3</a>.  <a href="#name-limited-scope-of-past-propo" class="internal xref">Limited scope of past proposals for prioritiztion or path selection</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.1">
+                    <p id="section-toc.1-1.1.2.3.2.1.1"><a href="#section-1.3.1" class="auto internal xref">1.3.1</a>.  <a href="#name-1-full-or-split-tunnel-base" class="internal xref">1: Full or Split tunnel based on Diff Serv via Differentiated Services Code Point (DSCP)</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.2">
+                    <p id="section-toc.1-1.1.2.3.2.2.1"><a href="#section-1.3.2" class="auto internal xref">1.3.2</a>.  <a href="#name-2-multiple-active-vpn-uplin" class="internal xref">2: Multiple Active VPN Uplinks used in weighted round robin order or ECMP</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.3">
+                    <p id="section-toc.1-1.1.2.3.2.3.1"><a href="#section-1.3.3" class="auto internal xref">1.3.3</a>.  <a href="#name-3-policy-based-routing-that" class="internal xref">3. Policy-Based routing that use flow preferences to pin traffic to a particular path</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.4">
+                    <p id="section-toc.1-1.1.2.3.2.4.1"><a href="#section-1.3.4" class="auto internal xref">1.3.4</a>.  <a href="#name-4-dynamic-path-selection-wi" class="internal xref">4. Dynamic Path Selection with application or domain identification</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.5">
+                    <p id="section-toc.1-1.1.2.3.2.5.1"><a href="#section-1.3.5" class="auto internal xref">1.3.5</a>.  <a href="#name-5-masque-quic-multiplexing-" class="internal xref">5. MASQUE (QUIC multiplexing) for all Web trafic</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.6">
+                    <p id="section-toc.1-1.1.2.3.2.6.1"><a href="#section-1.3.6" class="auto internal xref">1.3.6</a>.  <a href="#name-6-whitelist-for-ip-address-" class="internal xref">6. Whitelist for IP address or tuples to prioritize</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.7">
+                    <p id="section-toc.1-1.1.2.3.2.7.1"><a href="#section-1.3.7" class="auto internal xref">1.3.7</a>.  <a href="#name-7-entropy-headers" class="internal xref">7. Entropy headers</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.8">
+                    <p id="section-toc.1-1.1.2.3.2.8.1"><a href="#section-1.3.8" class="auto internal xref">1.3.8</a>.  <a href="#name-8-tunnelling-of-explicit-co" class="internal xref">8. Tunnelling of Explicit Congestion Notification(ECN)</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3.2.9">
+                    <p id="section-toc.1-1.1.2.3.2.9.1"><a href="#section-1.3.9" class="auto internal xref">1.3.9</a>.  <a href="#name-9-flow-labelling-or-classif" class="internal xref">9. Flow labelling or classification for traffic steering</a></p>
+</li>
+                </ul>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-proposal-to-standardize-the" class="internal xref">Proposal to standardize the selection algorithm</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1">
+                <p id="section-toc.1-1.2.2.1.1"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-algorithm-input-parameters" class="internal xref">Algorithm Input Parameters</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1.2.1">
+                    <p id="section-toc.1-1.2.2.1.2.1.1"><a href="#section-2.1.1" class="auto internal xref">2.1.1</a>.  <a href="#name-transport-layer-metrics" class="internal xref">Transport Layer Metrics</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1.2.2">
+                    <p id="section-toc.1-1.2.2.1.2.2.1"><a href="#section-2.1.2" class="auto internal xref">2.1.2</a>.  <a href="#name-path-characteristics-and-hi" class="internal xref">Path Characteristics and Historical Performance</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1.2.3">
+                    <p id="section-toc.1-1.2.2.1.2.3.1"><a href="#section-2.1.3" class="auto internal xref">2.1.3</a>.  <a href="#name-network-state-information" class="internal xref">Network State Information</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1.2.4">
+                    <p id="section-toc.1-1.2.2.1.2.4.1"><a href="#section-2.1.4" class="auto internal xref">2.1.4</a>.  <a href="#name-operational-requirements-an" class="internal xref">Operational Requirements and Constraints</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1.2.5">
+                    <p id="section-toc.1-1.2.2.1.2.5.1"><a href="#section-2.1.5" class="auto internal xref">2.1.5</a>.  <a href="#name-security-and-policy-metrics" class="internal xref">Security and Policy Metrics</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1.2.6">
+                    <p id="section-toc.1-1.2.2.1.2.6.1"><a href="#section-2.1.6" class="auto internal xref">2.1.6</a>.  <a href="#name-path-evaluation-input-struc" class="internal xref">Path Evaluation Input Structure</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2">
+                <p id="section-toc.1-1.2.2.2.1"><a href="#section-2.2" class="auto internal xref">2.2</a>.  <a href="#name-technical-algorithm-details" class="internal xref">Technical Algorithm Details</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2.2.1">
+                    <p id="section-toc.1-1.2.2.2.2.1.1"><a href="#section-2.2.1" class="auto internal xref">2.2.1</a>.  <a href="#name-algorithm-overview-for-a-sa" class="internal xref">Algorithm Overview for a sample implementation</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2.2.2">
+                    <p id="section-toc.1-1.2.2.2.2.2.1"><a href="#section-2.2.2" class="auto internal xref">2.2.2</a>.  <a href="#name-algorithm-flow-diagrams" class="internal xref">Algorithm Flow Diagrams</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2.2.3">
+                    <p id="section-toc.1-1.2.2.2.2.3.1"><a href="#section-2.2.3" class="auto internal xref">2.2.3</a>.  <a href="#name-algorithm-configuration-and" class="internal xref">Algorithm Configuration and Weights</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.3">
+                <p id="section-toc.1-1.2.2.3.1"><a href="#section-2.3" class="auto internal xref">2.3</a>.  <a href="#name-design-goals" class="internal xref">Design goals</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.4">
+                <p id="section-toc.1-1.2.2.4.1"><a href="#section-2.4" class="auto internal xref">2.4</a>.  <a href="#name-benefits-for-sd-wan-and-sas" class="internal xref">Benefits for SD-WAN and SASE Architectures</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.4.2.1">
+                    <p id="section-toc.1-1.2.2.4.2.1.1"><a href="#section-2.4.1" class="auto internal xref">2.4.1</a>.  <a href="#name-zero-trust-security-conside" class="internal xref">Zero Trust Security Considerations</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.5">
+                <p id="section-toc.1-1.2.2.5.1"><a href="#section-2.5" class="auto internal xref">2.5</a>.  <a href="#name-algorithms-requirements" class="internal xref">Algorithm's Requirements</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.6">
+                <p id="section-toc.1-1.2.2.6.1"><a href="#section-2.6" class="auto internal xref">2.6</a>.  <a href="#name-implementation-strategies" class="internal xref">Implementation Strategies</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-references" class="internal xref">References</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
+                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2">
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="auto internal xref">3.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-authors-address" class="internal xref">Author's Address</a></p>
+</li>
+        </ul>
+</nav>
+</section>
+</div>
+<div id="introduction">
+<section id="section-1">
+      <h2 id="name-introduction">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<p id="section-1-1">A path for sending data across a network can consist of a combination of many factors such as uplink, application layer protocol, tunneling protocol among others. For example TLS  operates above the network layer, SSH and Secure Real-time Transport Protocol (SRTP) <span>[<a href="#RFC5764" class="cite xref">RFC5764</a>]</span> operates at the application layer to carry data. Stream Control Transmission Protocol (SCTP), intended to tunnel signaling messages over IP networks, can encapsulate data as well. Tunneling can build a secure interconnection called Virtual Private Network(VPN) that provides a private subnet to pass traffic between the tunneled endpoints. This setup caters to enterprises and small private home networks alike. The protocols for such network level tunneling may include GRE, L2P, IPSec, WireGuard, OpenVPN and even proprietary protocols such as AutoVPN or custom implementtion over DTLS. Now multiple proxied stream- and datagram-based flows are possible inside an HTTP connection through the MASQUE which is build on QUIC. However there may be real world use-cases where network tunnels could nest application tunnels, which leads to large overheads in latency and quality of data.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<div id="fundamental-differences-tunneled-vs-non-tunneled-traffic-path-selection">
+<section id="section-1.1">
+        <h3 id="name-fundamental-differences-tun">
+<a href="#section-1.1" class="section-number selfRef">1.1. </a><a href="#name-fundamental-differences-tun" class="section-name selfRef">Fundamental Differences: Tunneled vs Non-Tunneled Traffic Path Selection</a>
+        </h3>
+<p id="section-1.1-1">Path selection for tunneled traffic operates under fundamentally different constraints and objectives compared to open internet traffic:<a href="#section-1.1-1" class="pilcrow">¶</a></p>
+<p id="section-1.1-2">Open internet traffic path selection is primarily controlled by either Applications (CDN selection, server choice) or Client-side networking stacks (Happy Eyeballs, etc.). To some extend user preferences and browser settings also play a role.
+Over this the Internet Service Providers may further controlouting policies and peering agreements and add their propertiary Traffic engineering algorithms.<a href="#section-1.1-2" class="pilcrow">¶</a></p>
+<p id="section-1.1-3">Tunneled traffic path selection is primarily governed by enterprise or service provider security policies. These policies determine which traffic must be tunneled for compliance or security reasons along with geographic or jurisdictional routing constraints. The data sovereignty and privacy protection requirements apply strongly to secure networks service providers. For this reason Network service providers (NSPs) maintain strict control over tunneled traffic routing through:
+- Dedicated tunnel infrastructure with specific performance guarantees
+- Policy-based routing that may override optimal path selection for security
+- Service Level Agreement (SLA) enforcement mechanisms
+- Centralized management
+- predtermined ingress and egress points
+Unlike open internet traffic where applications can freely choose destinations, tunneled traffic has limited Endpoint Flexibility.<a href="#section-1.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="current-path-selection-challenges">
+<section id="section-1.2">
+        <h3 id="name-current-path-selection-chal">
+<a href="#section-1.2" class="section-number selfRef">1.2. </a><a href="#name-current-path-selection-chal" class="section-name selfRef">Current Path Selection Challenges</a>
+        </h3>
+<p id="section-1.2-1">Today's heterogeneous networking landscape presents critical path selection challenges that span across multi-cloud environments, SASE architectures, and ISP networks, where vendors employ fundamentally incompatible approaches for routing incoming traffic flows. Multi-cloud deployments (AWS, Azure, Google Cloud so on ) suffer from inconsistent path selection decisions as traffic traverses between theirs and other's cloud providers, each implementing proprietary routing algorithms that optimize for local rather than global performance. SASE architectures compound these challenges by attenmpting to integrate  networking and security functions across multiple vendor solutions, yet current path selection mechanisms fail to coordinate effectively between edge security appliances, SD-WAN controllers, and cloud security services. Meanwhile, ISPs and network service providers continue to rely on fragmented approaches—ranging from load balancing across multiple paths to sophisticated ML-based traffic classification and queing—but these vendor-specific implementations lack standardization and interoperability, creating significant operational complexity and suboptimal performance when traffic flows cross vendor boundaries in modern hybrid network deployments.<a href="#section-1.2-1" class="pilcrow">¶</a></p>
+<p id="section-1.2-2">The key challenge is developing a standardized algorithm that can operate within the constraints of tunneled traffic while providing optimal performance, unlike open internet traffic where applications and ISPs have more flexibility in path selection decisions.<a href="#section-1.2-2" class="pilcrow">¶</a></p>
+<div id="vendor-interoperability">
+<section id="section-1.2.1">
+          <h4 id="name-vendor-interoperability-cha">
+<a href="#section-1.2.1" class="section-number selfRef">1.2.1. </a><a href="#name-vendor-interoperability-cha" class="section-name selfRef">Vendor Interoperability Challenges</a>
+          </h4>
+<p id="section-1.2.1-1">When different vendors implement proprietary or incompatible path selection algorithms, several critical disadvantages emerge that significantly impact network operations and performance:<a href="#section-1.2.1-1" class="pilcrow">¶</a></p>
+<div id="inconsistent-traffic-behavior-across-vendor-boundaries">
+<section id="section-1.2.1.1">
+            <h5 id="name-1-inconsistent-traffic-beha">
+<a href="#section-1.2.1.1" class="section-number selfRef">1.2.1.1. </a><a href="#name-1-inconsistent-traffic-beha" class="section-name selfRef">1. Inconsistent Traffic Behavior Across Vendor Boundaries</a>
+            </h5>
+<p id="section-1.2.1.1-1">Different vendor implementations may make contradictory path selection decisions for the same traffic flow, leading to conflicts and worst Suboptimal Routing where traffic may take longer, more expensive, or less reliable paths when crossing vendor boundaries.
+This leads to performance Oscillation and inconsistencies across vendor implementations.<a href="#section-1.2.1.1-1" class="pilcrow">¶</a></p>
+<p id="section-1.2.1.1-2"><strong>Example Scenario</strong>: A flow from Vendor A's SD-WAN appliance to Vendor B's tunnel endpoint may experience optimal path selection within Vendor A's domain but suboptimal selection when entering Vendor B's infrastructure due to incompatible metrics and decision criteria.<a href="#section-1.2.1.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="operational-complexity-and-management-overhead">
+<section id="section-1.2.1.2">
+            <h5 id="name-2-operational-complexity-an">
+<a href="#section-1.2.1.2" class="section-number selfRef">1.2.1.2. </a><a href="#name-2-operational-complexity-an" class="section-name selfRef">2. Operational Complexity and Management Overhead</a>
+            </h5>
+<p id="section-1.2.1.2-1">Network operators face significant challenges with multiple proprietary path selection implementation across multi-vendor deployments. The challenges not only include tracking but synchoirnizing any updates. Incompatible algorithms from different vendors lead to redundant Path Probing where Multiple vendors may independently probe the same paths, consuming bandwidth and generating unnecessary traffic, thus duplicate discovery processes.  This makes troubleshoting tough ans also deuplicate configurations.  This further leads to computational overhead leading to inconsistent resource utilization and cache inefficiency due to no decision sharing among vendors.<a href="#section-1.2.1.2-1" class="pilcrow">¶</a></p>
+<p id="section-1.2.1.2-2">Network-Wide Suboptimization is another concern as Vendor algorithms optimizing for local criteria may create network-wide inefficiencies and Load Balancing Imbalances leading to uneven traffic distribution and congestion hotspots. Unpredictable path selection behavior makes accurate capacity planning difficult for everyone.<a href="#section-1.2.1.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="security-and-compliance-risks">
+<section id="section-1.2.1.3">
+            <h5 id="name-3-security-and-compliance-r">
+<a href="#section-1.2.1.3" class="section-number selfRef">1.2.1.3. </a><a href="#name-3-security-and-compliance-r" class="section-name selfRef">3. Security and Compliance Risks</a>
+            </h5>
+<p id="section-1.2.1.3-1">Policy Enforcement Gaps based on varied interpretion makes may inadvertently route traffic through non-compliant paths or jurisdictions
+Multiple proprietary implementations increase the overall attack surface as Vendor-specific path selection patterns may reveal sensitive network topology or traffic information.<a href="#section-1.2.1.3-1" class="pilcrow">¶</a></p>
+<p id="section-1.2.1.3-2">Proprietary unstandardised best path selection algorithms create dependencies resulting in increased Total Cost of Ownership (TCO) through vendor lock-in. Service quality degradation occurs through inconsistent user experiences with varying service quality depending on which vendor's equipment handles their traffic. Unpredictable path selection behavior also makes it difficult to guarantee service level agreements and createing network  continuity risks. Furthermore, this artificial differentiation fragments innovation as vendor-specific implementations prevent collaborative development of industry-wide improvements, create interoperability stagnation, and establish barriers to technology evolution.<a href="#section-1.2.1.3-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="the-need-for-standardization">
+<section id="section-1.2.2">
+          <h4 id="name-the-need-for-standardizatio">
+<a href="#section-1.2.2" class="section-number selfRef">1.2.2. </a><a href="#name-the-need-for-standardizatio" class="section-name selfRef">The Need for Standardization</a>
+          </h4>
+<p id="section-1.2.2-1">These disadvantages collectively demonstrate the critical importance of standardized path selection algorithms that can ensure consistent behavior by providing predictable path selection decisions across vendor boundaries, enable interoperability through seamless integration of multi-vendor network infrastructure, reduce operational complexity and enable global optimization rather than vendor-specific local optimization, and enhance security through consistent policy enforcement and threat response across all network elements.<a href="#section-1.2.2-1" class="pilcrow">¶</a></p>
+<div id="path-discovery-overhead-and-resulting-conflicts">
+<section id="section-1.2.2.1">
+            <h5 id="name-path-discovery-overhead-and">
+<a href="#section-1.2.2.1" class="section-number selfRef">1.2.2.1. </a><a href="#name-path-discovery-overhead-and" class="section-name selfRef">Path discovery overhead and resulting conflicts</a>
+            </h5>
+<p id="section-1.2.2.1-1">The absence of standardized path selection algorithms creates significant overhead in discovering optimal paths and leads to widespread fragmentation challenges across heterogeneous tunnel deployments. When networking protocols use hole punching to establish paths between endpoints and multiple tunnels are formed for primary-standby or load sharing configurations, each vendor implements proprietary Path MTU Discovery (PMTUD) mechanisms that operate independently and often conflict with each other. This lack of coordination results in redundant path probing, where multiple vendors simultaneously attempt to discover the same path characteristics, consuming valuable bandwidth and generating unnecessary control traffic. The fragmentation problem is particularly acute because nested tunnels greatly impact traffic quality, with each encapsulation layer introducing additional headers that reduce the effective payload size, leading to frequent fragmentation and defragmentation cycles that increase computational overhead especially for time-sensitive applications operating under limited bandwidth constraints.<a href="#section-1.2.2.1-1" class="pilcrow">¶</a></p>
+<p id="section-1.2.2.1-2">While <span>[<a href="#RFC9868" class="cite xref">RFC9868</a>]</span> Transport Options for UDP provides mechanisms for enhanced path characteristic discovery through embedded metrics, congestion state signaling, and capability advertisement within regular data packets, UDP options-based signaling falls fundamentally short in addressing the core challenges of optimal path selection in multi-vendor environments. The UDP options approach suffers from limited cross-vendor coordination where different implementations may interpret or prioritize the embedded path quality indicators differently. Furthermore, the DPLPMTUD implementation through UDP options designed to minimize fragmentation-related overhead becomes ineffective when vendors use incompatible fragmentation strategies or fail to coordinate MTU discovery across nested tunnel layers, resulting in suboptimal path selections that may actually increase rather than decrease fragmentation.<a href="#section-1.2.2.1-2" class="pilcrow">¶</a></p>
+<p id="section-1.2.2.1-3">The inadequacy becomes evident in complex multi-vendor scenarios where algorithm negotiation, ECN propagation and conflict detection mechanisms fail to provide the comprehensive coordination needed for truly globally optimal path selection. Even with sophisticated features like authenticated ECN marking propagation through nested tunnel layers and active identification of congestion control interference, the fundamental problem remains that these mechanisms operate in isolation without a standardized framework for making unified path selection decisions. This fragmentation of approaches leads to situations where UDP options may indicate one path as optimal based on embedded metrics, while vendor-specific algorithms select different paths based on proprietary criteria, resulting in inconsistent path selection behavior** that undermines the very benefits that UDP options were designed to provide. The lack of a unified decision-making framework means that even advanced signaling capabilities cannot overcome the coordination challenges inherent in multi-vendor tunnel deployments, necessitating the standardized path selection algorithm proposed in this document.<a href="#section-1.2.2.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="congestion">
+<section id="section-1.2.3">
+          <h4 id="name-multilevel-congestion-contr">
+<a href="#section-1.2.3" class="section-number selfRef">1.2.3. </a><a href="#name-multilevel-congestion-contr" class="section-name selfRef">Multilevel Congestion Control and ECN Propagation</a>
+          </h4>
+<p id="section-1.2.3-1">Nested tunneling protocols create significant challenges for congestion control mechanisms, particularly when multiple layers independently attempt to manage network congestion. This section addresses these challenges in accordance with <span>[<a href="#RFC9599" class="cite xref">RFC9599</a>]</span> guidelines that add congestion notification to protocols that encapsulate IP. When transport protocols are tunneled within other transport protocols, multiple congestion control loops can interfere with each other, creating a complex interaction where the inner transport congestion control (e.g., TCP or QUIC) implements its own congestion control based on observed packet loss and RTT measurements, while simultaneously the tunnel transport congestion control (e.g., QUIC for MASQUE, UDP for IPsec) may implement its own independent congestion control mechanisms. These interaction effects result in the tunnel's congestion control affecting the RTT and loss measurements of the inner transport, leading to suboptimal performance and potential oscillations that degrade overall network efficiency.<a href="#section-1.2.3-1" class="pilcrow">¶</a></p>
+<p id="section-1.2.3-2">During ECN encapsulation, tunnel endpoints must copy the ECN field from the inner header to the outer header as specified in <span>[<a href="#RFC6040" class="cite xref">RFC6040</a>]</span> to negotiate ECN capability during tunnel establishment to enable proper congestion notification propagation, but this process becomes increasingly complex when multiple ECMP tunnels or aggregated flows are involved, each potentially implementing different ECN handling strategies.<a href="#section-1.2.3-2" class="pilcrow">¶</a></p>
+<p id="section-1.2.3-3">To address these multilevel congestion control challenges, the proposed congestion-aware path selection algorithm incorporates multiple sophisticated mechanisms that work synergistically to provide comprehensive network congestion awareness. The algorithm monitors ECN CE (Congestion Experienced) markings on different paths to assess real-time congestion levels, while it also identifies increased RTT variability that often indicates congestion for path quality assessment that inform path selection decisions, and where available, queue delay measurements offer early congestion detection capabilities that enable proactive path switching before performance degradation becomes severe.<a href="#section-1.2.3-3" class="pilcrow">¶</a></p>
+<p id="section-1.2.3-4">This integrated approach to congestion management represents a significant advancement over current fragmented solutions, providing a standardized framework that can effectively coordinate congestion control across multiple tunnel layers while maintaining compatibility with existing <span>[<a href="#RFC9599" class="cite xref">RFC9599</a>]</span> and <span>[<a href="#RFC6040" class="cite xref">RFC6040</a>]</span> standards. By incorporating these multiple congestion indicators into a unified decision-making process, the algorithm can make intelligent path selection decisions that avoid the oscillations and performance degradation inherent in current multilevel congestion control implementations.<a href="#section-1.2.3-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="prioritization">
+<section id="section-1.2.4">
+          <h4 id="name-prioritization">
+<a href="#section-1.2.4" class="section-number selfRef">1.2.4. </a><a href="#name-prioritization" class="section-name selfRef">Prioritization</a>
+          </h4>
+<p id="section-1.2.4-1">Mainstream techniques such as packet marking( DSCP, ECN so on ) and queuing of other non-critical traffic (Fq-CODEL, CAKE AQM) to optimize for realtime streams is essentially prioritization in practice. However, VPN providers, CSPs and/or ISP may employ polar-opposite algorithms to shape traffic based on their interest which could lead to  an overall non-synchronized approach, where a stream is prioritized in some networks and deprioritized in other networks.
+[Diagram: Prioritization across networks - shows how different networks may prioritize the same traffic differently]<a href="#section-1.2.4-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="limited-scope-of-past-proposals-for-prioritiztion-or-path-selection">
+<section id="section-1.3">
+        <h3 id="name-limited-scope-of-past-propo">
+<a href="#section-1.3" class="section-number selfRef">1.3. </a><a href="#name-limited-scope-of-past-propo" class="section-name selfRef">Limited scope of past proposals for prioritiztion or path selection</a>
+        </h3>
+<p id="section-1.3-1">Some prior work presented to IETF with the inevitable need for traffic shaping and prioritiation may include one or more of the following<a href="#section-1.3-1" class="pilcrow">¶</a></p>
+<p id="section-1.3-2">At present, in the case of multiple active uplinks connecting to various ISPs, there are multiple techniques to steer or prioritize traffic across the network (see <span>[<a href="#I-D.ietf-intarea-tunnels" class="cite xref">I-D.ietf-intarea-tunnels</a>]</span>), which may include,<a href="#section-1.3-2" class="pilcrow">¶</a></p>
+<div id="full-or-split-tunnel-based-on-diff-serv-via-differentiated-services-code-point-dscp">
+<section id="section-1.3.1">
+          <h4 id="name-1-full-or-split-tunnel-base">
+<a href="#section-1.3.1" class="section-number selfRef">1.3.1. </a><a href="#name-1-full-or-split-tunnel-base" class="section-name selfRef">1: Full or Split tunnel based on Diff Serv via Differentiated Services Code Point (DSCP)</a>
+          </h4>
+<p id="section-1.3.1-1"><span>[<a href="#RFC3270" class="cite xref">RFC3270</a>]</span> defines how to support the Diffserv architecture in MPLS networks, including how to encode DSCP in an MPLS header. Application priorities even though using the same protocol have also been used to mark the packets differently such as DSCP Packet Markings for WebRTC QoS <span>[<a href="#RFC8807" class="cite xref">RFC8807</a>]</span>.
+An example of path selection based on prioritiztion is that in case of dual uplinks available hosting an active tunnel tunnel each, use the one more with better performance for RTP since that is more prirotized over FTP data.<a href="#section-1.3.1-1" class="pilcrow">¶</a></p>
+<p id="section-1.3.1-2">The DSCP-based approach offers the advantage of being widely adopted across network infrastructures, making it a familiar and standardized method for traffic differentiation. However, this approach has significant limitations including unreliability in some cases where network operators may choose not to honor markings, and the inherent coarse-grained classification that cannot adequately differentiate between nuanced application requirements.<a href="#section-1.3.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="multiple-active-vpn-uplinks-used-in-weighted-round-robin-order-or-ecmp">
+<section id="section-1.3.2">
+          <h4 id="name-2-multiple-active-vpn-uplin">
+<a href="#section-1.3.2" class="section-number selfRef">1.3.2. </a><a href="#name-2-multiple-active-vpn-uplin" class="section-name selfRef">2: Multiple Active VPN Uplinks used in weighted round robin order or ECMP</a>
+          </h4>
+<p id="section-1.3.2-1">In case of multiple Active VPN Uplinks available, multiple paths are available to a  destination which can be split tunneled, tunneled via different application or network layer or both such as nested tunneled.  With so many options generic traffic shaping rules are often applied which may be based on QoS such as MOS, loss, latency, jitter, usage history, throughput on all VPN sessions or any other customized score. Attributes such as app type, address or even client identifier such as mac address can also be used to balance load across available options.  Simple loop techniques such as Weighted Round Robin do not offer much granularity and can also result in misconfiguration or worse still creating a bottleneck. Other means of balancing the traffic across available paths are Equal-cost multi-path (ECMP) <span>[<a href="#RFC2992" class="cite xref">RFC2992</a>]</span> which is fair by design and routes packets along multiple paths of equal cost but suffers from limited adaptability especially in sudden changes of network conditions and heterogeneous environments of unequal costs.
+Although it is tough to make a path selection algorithm which is ideal for balance, scalability as well optimized for all kinds of resource utilization, not having a common basis for path selection can not only lead to detrimental user experience but also undue strain on the network.<a href="#section-1.3.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="policy-based-routing-that-use-flow-preferences-to-pin-traffic-to-a-particular-path">
+<section id="section-1.3.3">
+          <h4 id="name-3-policy-based-routing-that">
+<a href="#section-1.3.3" class="section-number selfRef">1.3.3. </a><a href="#name-3-policy-based-routing-that" class="section-name selfRef">3. Policy-Based routing that use flow preferences to pin traffic to a particular path</a>
+          </h4>
+<p id="section-1.3.3-1">It is common for device or network policy to manage network flows such as bandwidth allocation or rate limiting, Geo or proximity based rules. At the device level these policies may prioritize some packets over others to avoid queing delay. Modern hybrid deployments employ many uplinks with a varity of traffic shaping policies which can be adjusted dynmaically not only based on Qos but also on hop-by-hop insights from network, tracking uplink's utilization, uptime, failure or outages.<a href="#section-1.3.3-1" class="pilcrow">¶</a></p>
+<p id="section-1.3.3-2">Policy-based routing provides the benefit of simplicity in implementation and configuration, making it straightforward for network administrators to define and manage traffic flows. However, this approach suffers from poor scalability as the number of policies and network complexity grows, often requiring manual intervention and becoming unwieldy in large-scale deployments.<a href="#section-1.3.3-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="dynamic-path-selection-with-application-or-domain-identification">
+<section id="section-1.3.4">
+          <h4 id="name-4-dynamic-path-selection-wi">
+<a href="#section-1.3.4" class="section-number selfRef">1.3.4. </a><a href="#name-4-dynamic-path-selection-wi" class="section-name selfRef">4. Dynamic Path Selection with application or domain identification</a>
+          </h4>
+<p id="section-1.3.4-1">The aplication knows its type and can directly feed the information to the algorithm. If the sender is not aware of the application it can attempt to obtain this information from intelligent ML models as Network Based Application Recognition (NBAR) from Cisco. Models exist that can suggest bottlenecks for a traffic type on a path by analysising patterns.
+Dynamic path selection can even rely on explicitly identifying Provisioning Domain Names through a Router Advertisement (RA) option. Discovering Provisioning Domain Names and Data, its architecture involving the authenticatio and trust model has been decribed in prior work <span>[<a href="#RFC7556" class="cite xref">RFC7556</a>]</span> and <span>[<a href="#RFC8801" class="cite xref">RFC8801</a>]</span>.<a href="#section-1.3.4-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="masque-quic-multiplexing-for-all-web-trafic">
+<section id="section-1.3.5">
+          <h4 id="name-5-masque-quic-multiplexing-">
+<a href="#section-1.3.5" class="section-number selfRef">1.3.5. </a><a href="#name-5-masque-quic-multiplexing-" class="section-name selfRef">5. MASQUE (QUIC multiplexing) for all Web trafic</a>
+          </h4>
+<p id="section-1.3.5-1">[Diagram: MASQUE QUIC multiplexing architecture showing stream multiplexing over HTTP/3]<a href="#section-1.3.5-1" class="pilcrow">¶</a></p>
+<p id="section-1.3.5-2">MASQUE provides the advantage of being able to handle both reliable and unreliable data streams efficiently through QUIC multiplexing, offering flexibility in transport protocol selection. However, this approach has the limitation of not being well-suited for non-web-based traffic, potentially requiring additional adaptations or alternative solutions for enterprise applications that do not follow web protocols.<a href="#section-1.3.5-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="whitelist-for-ip-address-or-tuples-to-prioritize">
+<section id="section-1.3.6">
+          <h4 id="name-6-whitelist-for-ip-address-">
+<a href="#section-1.3.6" class="section-number selfRef">1.3.6. </a><a href="#name-6-whitelist-for-ip-address-" class="section-name selfRef">6. Whitelist for IP address or tuples to prioritize</a>
+          </h4>
+<p id="section-1.3.6-1">Using whitelists for IP addresses or tuples offers the advantage of simplicity in implementation and clear, understandable traffic prioritization rules. However, this approach suffers from poor scalability as networks grow and IP address ranges change, requiring constant maintenance and becoming impractical for large-scale dynamic environments.<a href="#section-1.3.6-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="entropy-headers">
+<section id="section-1.3.7">
+          <h4 id="name-7-entropy-headers">
+<a href="#section-1.3.7" class="section-number selfRef">1.3.7. </a><a href="#name-7-entropy-headers" class="section-name selfRef">7. Entropy headers</a>
+          </h4>
+<p id="section-1.3.7-1">Entropy headers are extension to traditional packet header that include information about the randomness of the packet's payload. These help distributing traffic more evenly in a multipath network, mitigating the risk of hotspots and potential congestion points.<a href="#section-1.3.7-1" class="pilcrow">¶</a></p>
+<p id="section-1.3.7-2">Entropy headers provide the advantage of being protected from in-path modification by making these headers non-updatable, ensuring the integrity of load balancing decisions. However, this approach raises privacy concerns as the entropy information may reveal patterns about the payload content or application behavior that could be exploited by network observers.<a href="#section-1.3.7-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="tunnelling-of-explicit-congestion-notificationecn">
+<section id="section-1.3.8">
+          <h4 id="name-8-tunnelling-of-explicit-co">
+<a href="#section-1.3.8" class="section-number selfRef">1.3.8. </a><a href="#name-8-tunnelling-of-explicit-co" class="section-name selfRef">8. Tunnelling of Explicit Congestion Notification(ECN)</a>
+          </h4>
+<p id="section-1.3.8-1">Addition of ECN to IP <span>[<a href="#RFC3168" class="cite xref">RFC3168</a>]</span> paved the way for much optimization in managing queues based on these marking. <span>[<a href="#RFC6040" class="cite xref">RFC6040</a>]</span> describes the problems related to obscured original ECN markings in tunneled traffic. It proposes a standard for tunnels to propagate an extra level of congestion severity.<a href="#section-1.3.8-1" class="pilcrow">¶</a></p>
+<p id="section-1.3.8-2">ECN tunneling benefits from having existing standards that provide a foundation for implementation and interoperability across different network equipment vendors. However, the approach becomes significantly more complicated when dealing with nested tunnels, where multiple layers of ECN marking can create conflicts and require complex processing to maintain proper congestion signaling.<a href="#section-1.3.8-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="flow-labelling-or-classification-for-traffic-steering">
+<section id="section-1.3.9">
+          <h4 id="name-9-flow-labelling-or-classif">
+<a href="#section-1.3.9" class="section-number selfRef">1.3.9. </a><a href="#name-9-flow-labelling-or-classif" class="section-name selfRef">9. Flow labelling or classification for traffic steering</a>
+          </h4>
+<p id="section-1.3.9-1">Flow labeling and classification approaches provide the significant advantage of enabling the application of artificially intelligent machine learning models for sophisticated traffic analysis and optimization, allowing for adaptive and predictive traffic management. However, this approach can compromise privacy by potentially exposing sensitive information about user behavior, application usage patterns, and business processes through the classification metadata.<a href="#section-1.3.9-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="proposal-to-standardize-the-selection-algorithm">
+<section id="section-2">
+      <h2 id="name-proposal-to-standardize-the">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-proposal-to-standardize-the" class="section-name selfRef">Proposal to standardize the selection algorithm</a>
+      </h2>
+<p id="section-2-1">The VPN can be considered a limited premium network that protects confidential information of an organization such as business communication between retail stores. Hybrid work and move towards private access has increased the interest in tunneling traffic between endpoints. However at present, the traffic steering decision is made in a limited scoped or rule based manner which is different for various networks and service providers. Instead an alternative dynamic strategy is proposed which gauges the confidence in the various available options dynamically and may choose to send data directly via edge gateway, use one or more of the available tunnels or create a new on-demand tunnel, leveraging any of the tunneling protocols best suited.<a href="#section-2-1" class="pilcrow">¶</a></p>
+<p id="section-2-2">By dynamically deciding the tunnel type for a stream or packet, we could avoid the non-performing or counter-productive use-cases such as
+* added latency on real time streaming
+* added encryption for already end-to-end encrypted VoIP calls
+* NAT traversal nightmare
+* nested tunneling and double congestion control
+* exhausting limited bandwidth available from VPN providers<a href="#section-2-2" class="pilcrow">¶</a></p>
+<p id="section-2-3">The proposal is to standardize an algorithm that computes multiple available options and decides whether, on-demand tunnels are created (via  MASQUE, IPSec, SSH, GRE other proprietary protocols such as AutoVPN), an existing set of tunnels be reused or any other route, based on the current network dynamics and vulnerability of the traffic.
+Standardized Path selection decision making making algorithm would ensure same treatment of the stream across heterogeneous networks.<a href="#section-2-3" class="pilcrow">¶</a></p>
+<div id="algorithm-inputs">
+<section id="section-2.1">
+        <h3 id="name-algorithm-input-parameters">
+<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-algorithm-input-parameters" class="section-name selfRef">Algorithm Input Parameters</a>
+        </h3>
+<p id="section-2.1-1">The congestion-aware multipath tunnel selection algorithm processes multiple input parameters organized into the following categories. These parameters are selected to ensure vendor-agnostic standardization for inter-cloud and inter-vendor tunneling scenarios:<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+<div id="transport-layer-metrics">
+<section id="section-2.1.1">
+          <h4 id="name-transport-layer-metrics">
+<a href="#section-2.1.1" class="section-number selfRef">2.1.1. </a><a href="#name-transport-layer-metrics" class="section-name selfRef">Transport Layer Metrics</a>
+          </h4>
+<ol start="1" type="1" class="normal type-1" id="section-2.1.1-1">
+<li id="section-2.1.1-1.1">
+              <p id="section-2.1.1-1.1.1"><strong>Available Bandwidth</strong>: Measured in bits per second, obtained through bandwidth estimation algorithms or derived from Bandwidth Delay Product (BDP) calculations. The algorithm uses techniques similar to those in QUIC congestion control <span>[<a href="#RFC9002" class="cite xref">RFC9002</a>]</span>.<a href="#section-2.1.1-1.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li id="section-2.1.1-1.2">
+              <p id="section-2.1.1-1.2.1"><strong>Round-Trip Time (RTT)</strong>: Both baseline RTT and RTT variation measurements, which indicate path latency characteristics and potential congestion.<a href="#section-2.1.1-1.2.1" class="pilcrow">¶</a></p>
+</li>
+            <li id="section-2.1.1-1.3">
+              <p id="section-2.1.1-1.3.1"><strong>Packet Loss Rate</strong>: Measured loss percentage that indicates network congestion or path quality issues.<a href="#section-2.1.1-1.3.1" class="pilcrow">¶</a></p>
+</li>
+            <li id="section-2.1.1-1.4">
+              <p id="section-2.1.1-1.4.1"><strong>ECN Markings Ratio</strong>: The percentage of packets marked with ECN Congestion Experienced (CE) bits, providing early congestion detection as per <span>[<a href="#RFC9599" class="cite xref">RFC9599</a>]</span>.<a href="#section-2.1.1-1.4.1" class="pilcrow">¶</a></p>
+</li>
+            <li id="section-2.1.1-1.5">
+              <p id="section-2.1.1-1.5.1"><strong>UDP Options Enhanced Metrics</strong>: Leveraging <span>[<a href="#RFC9868" class="cite xref">RFC9868</a>]</span> Transport Options for UDP to enable real-time path characteristic discovery:<a href="#section-2.1.1-1.5.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.1.1-1.5.2.1">
+                  <p id="section-2.1.1-1.5.2.1.1">Real-time Path Probing: UDP options carrying path quality metrics for immediate assessment without dedicated probe traffic<a href="#section-2.1.1-1.5.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.1-1.5.2.2">
+                  <p id="section-2.1.1-1.5.2.2.1">Congestion Control Compatibility Signaling: Transport options indicating supported congestion control algorithms (BBR, CUBIC, etc.) and ECN capabilities<a href="#section-2.1.1-1.5.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.1-1.5.2.3">
+                  <p id="section-2.1.1-1.5.2.3.1">Authentication Status: AUTH option validation confirming tunnel endpoint authenticity and preventing path manipulation attacks<a href="#section-2.1.1-1.5.2.3.1" class="pilcrow">¶</a></p>
+</li>
+              </ul>
+</li>
+          </ol>
+</section>
+</div>
+<div id="path-characteristics-and-historical-performance">
+<section id="section-2.1.2">
+          <h4 id="name-path-characteristics-and-hi">
+<a href="#section-2.1.2" class="section-number selfRef">2.1.2. </a><a href="#name-path-characteristics-and-hi" class="section-name selfRef">Path Characteristics and Historical Performance</a>
+          </h4>
+<ol start="1" type="1" class="normal type-1" id="section-2.1.2-1">
+<li id="section-2.1.2-1.1">
+              <p id="section-2.1.2-1.1.1"><strong>Enhanced Tunnel Overhead Calculations</strong>: Leveraging <span>[<a href="#RFC9868" class="cite xref">RFC9868</a>]</span> UDP options for precise overhead assessment:<a href="#section-2.1.2-1.1.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.1.2-1.1.2.1">
+                  <p id="section-2.1.2-1.1.2.1.1">Base Protocol Overhead: Static overhead from tunneling protocols (IPsec, MASQUE, WireGuard, etc.)<a href="#section-2.1.2-1.1.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.2-1.1.2.2">
+                  <p id="section-2.1.2-1.1.2.2.1">Dynamic UDP Options Overhead: Additional bytes from <span>[<a href="#RFC9868" class="cite xref">RFC9868</a>]</span> transport options based on active feature set<a href="#section-2.1.2-1.1.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.2-1.1.2.3">
+                  <p id="section-2.1.2-1.1.2.3.1">Fragmentation Impact Assessment: Real-time evaluation of fragmentation probability using UDP options for Path MTU Discovery (DPLPMTUD)<a href="#section-2.1.2-1.1.2.3.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.2-1.1.2.4">
+                  <p id="section-2.1.2-1.1.2.4.1">Processing Overhead Metrics: CPU and memory costs for UDP option parsing and generation at tunnel endpoints<a href="#section-2.1.2-1.1.2.4.1" class="pilcrow">¶</a></p>
+</li>
+              </ul>
+</li>
+            <li id="section-2.1.2-1.2">
+              <p id="section-2.1.2-1.2.1"><strong>Path MTU Discovery Enhanced</strong>: <span>[<a href="#RFC9868" class="cite xref">RFC9868</a>]</span> DPLPMTUD support enabling:<a href="#section-2.1.2-1.2.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.1.2-1.2.2.1">
+                  <p id="section-2.1.2-1.2.2.1.1">Adaptive MTU Sizing: Dynamic adjustment based on observed fragmentation<a href="#section-2.1.2-1.2.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.2-1.2.2.2">
+                  <p id="section-2.1.2-1.2.2.2.1">Multi-layer MTU Coordination: Coordinated MTU discovery across nested tunnel layers<a href="#section-2.1.2-1.2.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.2-1.2.2.3">
+                  <p id="section-2.1.2-1.2.2.3.1">Fragmentation Avoidance: Proactive path selection to minimize fragmentation overhead<a href="#section-2.1.2-1.2.2.3.1" class="pilcrow">¶</a></p>
+</li>
+              </ul>
+</li>
+            <li id="section-2.1.2-1.3">
+              <p id="section-2.1.2-1.3.1"><strong>Advanced Congestion Control Compatibility Assessment</strong>: <span>[<a href="#RFC9868" class="cite xref">RFC9868</a>]</span> enhanced evaluation including:<a href="#section-2.1.2-1.3.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.1.2-1.3.2.1">
+                  <p id="section-2.1.2-1.3.2.1.1">Transport Option Negotiation: Capability discovery for congestion control algorithms through UDP options<a href="#section-2.1.2-1.3.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.2-1.3.2.2">
+                  <p id="section-2.1.2-1.3.2.2.1">ECN Propagation Verification: Active testing of ECN handling across tunnel layers using authenticated transport options<a href="#section-2.1.2-1.3.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.2-1.3.2.3">
+                  <p id="section-2.1.2-1.3.2.3.1">Congestion Control Interference Detection: Identification of nested congestion control conflicts through option-based signaling<a href="#section-2.1.2-1.3.2.3.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.2-1.3.2.4">
+                  <p id="section-2.1.2-1.3.2.4.1">Algorithm Compatibility Matrix: Real-time assessment of congestion control algorithm effectiveness on each path<a href="#section-2.1.2-1.3.2.4.1" class="pilcrow">¶</a></p>
+</li>
+              </ul>
+</li>
+            <li id="section-2.1.2-1.4">
+              <p id="section-2.1.2-1.4.1"><strong>Historical Performance Database</strong>: Time-series data including:<a href="#section-2.1.2-1.4.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.1.2-1.4.2.1">
+                  <p id="section-2.1.2-1.4.2.1.1">Average throughput over different time periods (hourly, daily, weekly)<a href="#section-2.1.2-1.4.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.2-1.4.2.2">
+                  <p id="section-2.1.2-1.4.2.2.1">Failure frequency and duration statistics<a href="#section-2.1.2-1.4.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.2-1.4.2.3">
+                  <p id="section-2.1.2-1.4.2.3.1">Congestion pattern analysis<a href="#section-2.1.2-1.4.2.3.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.2-1.4.2.4">
+                  <p id="section-2.1.2-1.4.2.4.1">Peak usage periods and capacity utilization trends<a href="#section-2.1.2-1.4.2.4.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.2-1.4.2.5">
+                  <p id="section-2.1.2-1.4.2.5.1">UDP Options Performance History: <span>[<a href="#RFC9868" class="cite xref">RFC9868</a>]</span> specific metrics including option parsing latency, authentication success rates, and DPLPMTUD effectiveness<a href="#section-2.1.2-1.4.2.5.1" class="pilcrow">¶</a></p>
+</li>
+              </ul>
+</li>
+            <li id="section-2.1.2-1.5">
+              <p id="section-2.1.2-1.5.1"><strong>Predictive Performance Indicators</strong>:
+   - Projected path quality based on historical patterns
+   - Anticipated congestion windows based on time-of-day patterns
+   - Failure probability predictions based on infrastructure health
+   - Expected performance degradation under various load conditions
+   - Real-time Path Quality Prediction: ML models path characteristic forecasting<a href="#section-2.1.2-1.5.1" class="pilcrow">¶</a></p>
+</li>
+          </ol>
+</section>
+</div>
+<div id="network-state-information">
+<section id="section-2.1.3">
+          <h4 id="name-network-state-information">
+<a href="#section-2.1.3" class="section-number selfRef">2.1.3. </a><a href="#name-network-state-information" class="section-name selfRef">Network State Information</a>
+          </h4>
+<ol start="1" type="1" class="normal type-1" id="section-2.1.3-1">
+<li id="section-2.1.3-1.1">
+              <p id="section-2.1.3-1.1.1"><strong>Provisioning Domains (PvD)</strong>: Network characteristics and policies as defined in <span>[<a href="#RFC7556" class="cite xref">RFC7556</a>]</span> and <span>[<a href="#RFC8801" class="cite xref">RFC8801</a>]</span>.<a href="#section-2.1.3-1.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li id="section-2.1.3-1.2">
+              <p id="section-2.1.3-1.2.1"><strong>Network Telemetry</strong>: Real-time network health data including queue depths, interface utilization, and error rates.<a href="#section-2.1.3-1.2.1" class="pilcrow">¶</a></p>
+</li>
+            <li id="section-2.1.3-1.3">
+              <p id="section-2.1.3-1.3.1"><strong>NQB Traffic Classification</strong>: Identification of Non-Queue-Building traffic that requires special handling as per TSVWG NQB PHB specifications.<a href="#section-2.1.3-1.3.1" class="pilcrow">¶</a></p>
+</li>
+            <li id="section-2.1.3-1.4">
+              <p id="section-2.1.3-1.4.1"><strong>UDP Options Network Discovery</strong>: <span>[<a href="#RFC9868" class="cite xref">RFC9868</a>]</span> enhanced network state assessment:<a href="#section-2.1.3-1.4.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.1.3-1.4.2.1">
+                  <p id="section-2.1.3-1.4.2.1.1">Real-time Path Characteristic Discovery: Active measurement of path properties using UDP options without additional probe traffic<a href="#section-2.1.3-1.4.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.3-1.4.2.2">
+                  <p id="section-2.1.3-1.4.2.2.1">Transport Capability Negotiation: Dynamic discovery of network and endpoint transport feature support through option exchange<a href="#section-2.1.3-1.4.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.3-1.4.2.3">
+                  <p id="section-2.1.3-1.4.2.3.1">Security Policy Enforcement: Authenticated path validation using AUTH options to prevent path spoofing and ensure policy compliance<a href="#section-2.1.3-1.4.2.3.1" class="pilcrow">¶</a></p>
+</li>
+              </ul>
+</li>
+          </ol>
+</section>
+</div>
+<div id="operational-requirements-and-constraints">
+<section id="section-2.1.4">
+          <h4 id="name-operational-requirements-an">
+<a href="#section-2.1.4" class="section-number selfRef">2.1.4. </a><a href="#name-operational-requirements-an" class="section-name selfRef">Operational Requirements and Constraints</a>
+          </h4>
+<ol start="1" type="1" class="normal type-1" id="section-2.1.4-1">
+<li id="section-2.1.4-1.1">
+              <p id="section-2.1.4-1.1.1"><strong>Failure Tolerance Specification</strong>: Configurable parameters defining acceptable service degradation:<a href="#section-2.1.4-1.1.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.1.4-1.1.2.1">
+                  <p id="section-2.1.4-1.1.2.1.1">Maximum acceptable RTT increase (percentage or absolute value)<a href="#section-2.1.4-1.1.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.1.2.2">
+                  <p id="section-2.1.4-1.1.2.2.1">Minimum acceptable bandwidth threshold<a href="#section-2.1.4-1.1.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.1.2.3">
+                  <p id="section-2.1.4-1.1.2.3.1">Maximum tolerable packet loss rate<a href="#section-2.1.4-1.1.2.3.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.1.2.4">
+                  <p id="section-2.1.4-1.1.2.4.1">Service availability requirements (e.g., 99.9% uptime)<a href="#section-2.1.4-1.1.2.4.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.1.2.5">
+                  <p id="section-2.1.4-1.1.2.5.1">Graceful degradation preferences vs hard failover<a href="#section-2.1.4-1.1.2.5.1" class="pilcrow">¶</a></p>
+</li>
+              </ul>
+</li>
+            <li id="section-2.1.4-1.2">
+              <p id="section-2.1.4-1.2.1"><strong>Cost Considerations</strong>: Economic factors affecting path selection:<a href="#section-2.1.4-1.2.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.1.4-1.2.2.1">
+                  <p id="section-2.1.4-1.2.2.1.1">Per-byte or per-minute tunnel service charges<a href="#section-2.1.4-1.2.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.2.2.2">
+                  <p id="section-2.1.4-1.2.2.2.1">Bandwidth cost differentials between providers<a href="#section-2.1.4-1.2.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.2.2.3">
+                  <p id="section-2.1.4-1.2.2.3.1">Infrastructure maintenance and operational costs<a href="#section-2.1.4-1.2.2.3.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.2.2.4">
+                  <p id="section-2.1.4-1.2.2.4.1">Service Level Agreement penalty costs<a href="#section-2.1.4-1.2.2.4.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.2.2.5">
+                  <p id="section-2.1.4-1.2.2.5.1">Peak usage surcharge implications<a href="#section-2.1.4-1.2.2.5.1" class="pilcrow">¶</a></p>
+</li>
+              </ul>
+</li>
+            <li id="section-2.1.4-1.3">
+              <p id="section-2.1.4-1.3.1"><strong>Green Networking Parameters</strong>: Environmental impact considerations:<a href="#section-2.1.4-1.3.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.1.4-1.3.2.1">
+                  <p id="section-2.1.4-1.3.2.1.1">Carbon intensity of different network paths (grams CO2/kWh)<a href="#section-2.1.4-1.3.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.3.2.2">
+                  <p id="section-2.1.4-1.3.2.2.1">Energy efficiency ratings of tunnel endpoints<a href="#section-2.1.4-1.3.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.3.2.3">
+                  <p id="section-2.1.4-1.3.2.3.1">Renewable energy percentage of infrastructure providers<a href="#section-2.1.4-1.3.2.3.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.3.2.4">
+                  <p id="section-2.1.4-1.3.2.4.1">Geographic routing preferences for low-carbon paths<a href="#section-2.1.4-1.3.2.4.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.3.2.5">
+                  <p id="section-2.1.4-1.3.2.5.1">Time-of-day energy grid composition data<a href="#section-2.1.4-1.3.2.5.1" class="pilcrow">¶</a></p>
+</li>
+              </ul>
+</li>
+            <li id="section-2.1.4-1.4">
+              <p id="section-2.1.4-1.4.1"><strong>Prioritization Matrix</strong>: Traffic classification and handling preferences:<a href="#section-2.1.4-1.4.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.1.4-1.4.2.1">
+                  <p id="section-2.1.4-1.4.2.1.1">Real-time traffic prioritization (VoIP, video conferencing)<a href="#section-2.1.4-1.4.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.4.2.2">
+                  <p id="section-2.1.4-1.4.2.2.1">Business-critical application identification<a href="#section-2.1.4-1.4.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.4.2.3">
+                  <p id="section-2.1.4-1.4.2.3.1">Time-sensitive transaction requirements<a href="#section-2.1.4-1.4.2.3.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.4.2.4">
+                  <p id="section-2.1.4-1.4.2.4.1">Bulk transfer tolerance levels<a href="#section-2.1.4-1.4.2.4.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.4-1.4.2.5">
+                  <p id="section-2.1.4-1.4.2.5.1">Interactive vs batch workload classification<a href="#section-2.1.4-1.4.2.5.1" class="pilcrow">¶</a></p>
+</li>
+              </ul>
+</li>
+          </ol>
+</section>
+</div>
+<div id="security-and-policy-metrics">
+<section id="section-2.1.5">
+          <h4 id="name-security-and-policy-metrics">
+<a href="#section-2.1.5" class="section-number selfRef">2.1.5. </a><a href="#name-security-and-policy-metrics" class="section-name selfRef">Security and Policy Metrics</a>
+          </h4>
+<ol start="1" type="1" class="normal type-1" id="section-2.1.5-1">
+<li id="section-2.1.5-1.1">
+              <p id="section-2.1.5-1.1.1"><strong>Traffic Vulnerability Assessment</strong>: A normalized value (0.0-1.0) indicating the security exposure of traffic, where higher values indicate greater need for tunneling protection.<a href="#section-2.1.5-1.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li id="section-2.1.5-1.2">
+              <p id="section-2.1.5-1.2.1"><strong>Policy Constraints</strong>: Enterprise or regulatory policies that may mandate or prohibit certain tunneling approaches for specific traffic types including:<a href="#section-2.1.5-1.2.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.1.5-1.2.2.1">
+                  <p id="section-2.1.5-1.2.2.1.1">Data sovereignty requirements (geographic routing restrictions)<a href="#section-2.1.5-1.2.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.5-1.2.2.2">
+                  <p id="section-2.1.5-1.2.2.2.1">Compliance framework mandates (GDPR, HIPAA, SOX)<a href="#section-2.1.5-1.2.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.5-1.2.2.3">
+                  <p id="section-2.1.5-1.2.2.3.1">Cryptographic algorithm requirements<a href="#section-2.1.5-1.2.2.3.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-2.1.5-1.2.2.4">
+                  <p id="section-2.1.5-1.2.2.4.1">Audit trail and logging requirements<a href="#section-2.1.5-1.2.2.4.1" class="pilcrow">¶</a></p>
+</li>
+              </ul>
+</li>
+          </ol>
+</section>
+</div>
+<div id="path-evaluation-input-structure">
+<section id="section-2.1.6">
+          <h4 id="name-path-evaluation-input-struc">
+<a href="#section-2.1.6" class="section-number selfRef">2.1.6. </a><a href="#name-path-evaluation-input-struc" class="section-name selfRef">Path Evaluation Input Structure</a>
+          </h4>
+<ol start="1" type="1" class="normal type-1" id="section-2.1.6-1">
+<li id="section-2.1.6-1.1">
+              <p id="section-2.1.6-1.1.1"><strong>Available Path Inventory</strong>: Comprehensive catalog of available paths including:<a href="#section-2.1.6-1.1.1" class="pilcrow">¶</a></p>
+</li>
+          </ol>
+<p id="section-2.1.6-2">For example :
+<code>yaml
+path_inventory:
+  - path_id: "path_001"
+    tunnel_type: "ipsec"
+    endpoints: ["gateway1.provider.com", "gateway2.provider.com"]
+    characteristics:
+      bandwidth_capacity: "1000 Mbps"
+      baseline_rtt: "25 ms"
+      provider: "Provider A"
+      geographic_route: ["US-West", "US-East"]
+      sla_guarantees:
+        uptime: "99.95%"
+        max_latency: "50 ms"
+        min_bandwidth: "800 Mbps"
+    historical_performance:
+      avg_throughput_30d: "850 Mbps"
+      failure_incidents_30d: 2
+      avg_failure_duration: "4.2 minutes"
+      peak_usage_hours: ["09:00-12:00", "14:00-17:00"]
+    cost_structure:
+      base_cost_per_gb: "$0.12"
+      peak_surcharge: "25%"
+      setup_cost: "$500"
+    environmental_impact:
+      carbon_intensity: "0.45 kg CO2/kWh"
+      renewable_percentage: "75%"
+</code><a href="#section-2.1.6-2" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-2.1.6-3">
+<li id="section-2.1.6-3.1">
+              <p id="section-2.1.6-3.1.1"><strong>Incoming Traffic Profile</strong>: Characteristics of traffic requiring path assignment:<a href="#section-2.1.6-3.1.1" class="pilcrow">¶</a></p>
+</li>
+          </ol>
+<p id="section-2.1.6-4">For example :
+<code>yaml
+traffic_profile:
+  - flow_id: "flow_001"
+    application_type: "video_conference"
+    requirements:
+      min_bandwidth: "5 Mbps"
+      max_latency: "100 ms"
+      max_jitter: "20 ms"
+      priority: "high"
+      failure_tolerance: "low"
+    security_requirements:
+      encryption_required: true
+      compliance_frameworks: ["SOC2", "GDPR"]
+      geographic_constraints: ["no_transit_through_china"]
+    duration_estimate: "60 minutes"
+    data_volume_estimate: "2.25 GB"
+</code><a href="#section-2.1.6-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="technical-algorithm">
+<section id="section-2.2">
+        <h3 id="name-technical-algorithm-details">
+<a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-technical-algorithm-details" class="section-name selfRef">Technical Algorithm Details</a>
+        </h3>
+<p id="section-2.2-1">The core algorithm performs a multi-dimensional optimization to match incoming traffic profiles with available paths while respecting policy constraints and performance objectives.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
+<div id="algorithm-overview-for-a-sample-implementation">
+<section id="section-2.2.1">
+          <h4 id="name-algorithm-overview-for-a-sa">
+<a href="#section-2.2.1" class="section-number selfRef">2.2.1. </a><a href="#name-algorithm-overview-for-a-sa" class="section-name selfRef">Algorithm Overview for a sample implementation</a>
+          </h4>
+<p id="section-2.2.1-1">```
+Input:
+  - Traffic_Profile (T)
+  - Available_Paths (P = {p1, p2, ..., pn})
+  - Policy_Constraints (C)
+  - Optimization_Weights (W)<a href="#section-2.2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.1-2">Output:
+  - Selected_Path (p*)
+  - Confidence_Score (0.0-1.0)
+  - Fallback_Paths (list of p_fallback1, p_fallback2, etc.)<a href="#section-2.2.1-2" class="pilcrow">¶</a></p>
+<p id="section-2.2.1-3">Function: SelectOptimalTunnelPath(T, P, C, W)
+```<a href="#section-2.2.1-3" class="pilcrow">¶</a></p>
+<div id="step-1-policy-filtering">
+<section id="section-2.2.1.1">
+            <h5 id="name-step-1-policy-filtering">
+<a href="#section-2.2.1.1" class="section-number selfRef">2.2.1.1. </a><a href="#name-step-1-policy-filtering" class="section-name selfRef">Step 1: Policy Filtering</a>
+            </h5>
+<p id="section-2.2.1.1-1">Apply hard security and compliance constraints to eliminate paths that violate geographic, regulatory, or encryption requirements.
+Remove paths that cannot satisfy data sovereignty, compliance framework, or mandatory security policy requirements.<a href="#section-2.2.1.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.1.1-2">```python
+def policy_filter(traffic_profile, available_paths, constraints):
+    """
+    Filter paths based on hard security and compliance constraints
+    """
+    eligible_paths = []<a href="#section-2.2.1.1-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-2.2.1.1-3">
+<pre>
+for path in available_paths:
+    # Check geographic constraints
+    if not satisfies_geographic_constraints(path, constraints):
+        continue
+
+    # Check compliance requirements
+    if not meets_compliance_requirements(path, traffic_profile.compliance):
+        continue
+
+    # Check encryption requirements
+    if traffic_profile.encryption_required and not path.supports_encryption:
+        continue
+
+    # Check data sovereignty requirements
+    if violates_data_sovereignty(path, constraints):
+        continue
+
+    eligible_paths.append(path)
+
+return eligible_paths ```
+</pre><a href="#section-2.2.1.1-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="step-2-performance-scoring">
+<section id="section-2.2.1.2">
+            <h5 id="name-step-2-performance-scoring">
+<a href="#section-2.2.1.2" class="section-number selfRef">2.2.1.2. </a><a href="#name-step-2-performance-scoring" class="section-name selfRef">Step 2: Performance Scoring</a>
+            </h5>
+<p id="section-2.2.1.2-1">Calculate performance compatibility scores for bandwidth adequacy, latency suitability, reliability, and congestion likelihood.
+Generate normalized scores (0.0-1.0) based on current network metrics and historical performance data.<a href="#section-2.2.1.2-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.1.2-2">```python
+def calculate_performance_score(traffic_profile, path):
+    """
+    Calculate performance compatibility score (0.0-1.0)
+    """
+    scores = {}<a href="#section-2.2.1.2-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-2.2.1.2-3">
+<pre>
+# Bandwidth adequacy
+bandwidth_ratio = path.available_bandwidth / traffic_profile.min_bandwidth
+scores['bandwidth'] = min(1.0, bandwidth_ratio)
+
+# Latency suitability
+if path.current_rtt &lt;= traffic_profile.max_latency:
+    scores['latency'] = 1.0 - (path.current_rtt / traffic_profile.max_latency)
+else:
+    scores['latency'] = 0.0
+
+# Reliability based on historical data
+uptime_score = path.historical_uptime / 100.0
+mtbf_score = calculate_mtbf_score(path.failure_history)
+scores['reliability'] = (uptime_score + mtbf_score) / 2
+
+# Congestion likelihood
+current_utilization = path.current_load / path.capacity
+congestion_risk = predict_congestion_risk(path, traffic_profile.duration)
+scores['congestion'] = 1.0 - (current_utilization * 0.6 + congestion_risk * 0.4)
+
+return scores ```
+</pre><a href="#section-2.2.1.2-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="step-3-cost-benefit-analysis">
+<section id="section-2.2.1.3">
+            <h5 id="name-step-3-cost-benefit-analysi">
+<a href="#section-2.2.1.3" class="section-number selfRef">2.2.1.3. </a><a href="#name-step-3-cost-benefit-analysi" class="section-name selfRef">Step 3: Cost-Benefit Analysis</a>
+            </h5>
+<p id="section-2.2.1.3-1">Evaluate economic factors including data transfer costs, duration charges, and setup fees against traffic profile budget constraints.
+Normalize cost scores where lower total costs yield higher scores, with zero score for budget-exceeding paths.<a href="#section-2.2.1.3-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.1.3-2">```python
+def calculate_cost_score(traffic_profile, path):
+    """
+    Calculate normalized cost score (lower cost = higher score)
+    """
+    # Calculate total cost for traffic profile
+    data_cost = traffic_profile.data_volume * path.cost_per_gb
+    duration_cost = traffic_profile.duration * path.cost_per_minute
+    setup_cost = path.setup_cost if path.requires_setup else 0<a href="#section-2.2.1.3-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-2.2.1.3-3">
+<pre>
+total_cost = data_cost + duration_cost + setup_cost
+
+# Normalize against maximum acceptable cost
+if total_cost &lt;= traffic_profile.max_cost:
+    return 1.0 - (total_cost / traffic_profile.max_cost)
+else:
+    return 0.0  # Exceeds budget ```
+</pre><a href="#section-2.2.1.3-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="step-4-environmental-impact-scoring">
+<section id="section-2.2.1.4">
+            <h5 id="name-step-4-environmental-impact">
+<a href="#section-2.2.1.4" class="section-number selfRef">2.2.1.4. </a><a href="#name-step-4-environmental-impact" class="section-name selfRef">Step 4: Environmental Impact Scoring</a>
+            </h5>
+<p id="section-2.2.1.4-1">Assess carbon intensity, renewable energy percentage, energy efficiency ratings, and geographic routing efficiency.
+Combine environmental factors into composite green scores to support sustainable networking decisions.<a href="#section-2.2.1.4-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.1.4-2">```python
+def calculate_green_score(traffic_profile, path):
+    """
+    Calculate environmental impact score (lower impact = higher score)
+    """
+    # Carbon intensity scoring
+    carbon_score = 1.0 - (path.carbon_intensity / MAX_CARBON_INTENSITY)<a href="#section-2.2.1.4-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-2.2.1.4-3">
+<pre>
+# Renewable energy percentage
+renewable_score = path.renewable_percentage / 100.0
+
+# Energy efficiency of path
+efficiency_score = path.energy_efficiency_rating / 5.0  # Assume 5-star rating
+
+# Geographic routing efficiency (shorter paths generally more efficient)
+routing_efficiency = calculate_routing_efficiency(path.geographic_route)
+
+return (carbon_score * 0.4 + renewable_score * 0.3 +
+        efficiency_score * 0.2 + routing_efficiency * 0.1) ```
+</pre><a href="#section-2.2.1.4-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="step-5-failure-tolerance-evaluation">
+<section id="section-2.2.1.5">
+            <h5 id="name-step-5-failure-tolerance-ev">
+<a href="#section-2.2.1.5" class="section-number selfRef">2.2.1.5. </a><a href="#name-step-5-failure-tolerance-ev" class="section-name selfRef">Step 5: Failure Tolerance Evaluation</a>
+            </h5>
+<p id="section-2.2.1.5-1">Verify each path's ability to meet RTT degradation tolerance, bandwidth guarantees, and availability requirements.
+Generate binary tolerance scores based on SLA guarantees and traffic profile failure tolerance specifications.<a href="#section-2.2.1.5-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.1.5-2">```python
+def evaluate_failure_tolerance(traffic_profile, path):
+    """
+    Assess path's ability to meet failure tolerance requirements
+    """
+    tolerance_scores = {}<a href="#section-2.2.1.5-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-2.2.1.5-3">
+<pre>
+# RTT degradation tolerance
+predicted_rtt_increase = predict_rtt_degradation(path)
+if predicted_rtt_increase &lt;= traffic_profile.max_rtt_increase:
+    tolerance_scores['rtt_tolerance'] = 1.0
+else:
+    tolerance_scores['rtt_tolerance'] = 0.0
+
+# Bandwidth degradation tolerance
+min_guaranteed_bw = path.sla_guarantees.min_bandwidth
+if min_guaranteed_bw &gt;= traffic_profile.min_bandwidth:
+    tolerance_scores['bandwidth_tolerance'] = 1.0
+else:
+    tolerance_scores['bandwidth_tolerance'] = 0.0
+
+# Availability requirements
+if path.sla_guarantees.uptime &gt;= traffic_profile.min_availability:
+    tolerance_scores['availability'] = 1.0
+else:
+    tolerance_scores['availability'] = 0.0
+
+return tolerance_scores ```
+</pre><a href="#section-2.2.1.5-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="step-6-composite-scoring-and-selection">
+<section id="section-2.2.1.6">
+            <h5 id="name-step-6-composite-scoring-an">
+<a href="#section-2.2.1.6" class="section-number selfRef">2.2.1.6. </a><a href="#name-step-6-composite-scoring-an" class="section-name selfRef">Step 6: Composite Scoring and Selection</a>
+            </h5>
+<p id="section-2.2.1.6-1">Calculate weighted composite scores using optimization weights and apply priority multipliers.
+Sort paths by final scores and select optimal path with confidence calculation and fallback path identification.<a href="#section-2.2.1.6-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.1.6-2">```python
+def select_optimal_path(traffic_profile, eligible_paths, weights):
+    """
+    Calculate composite scores and select optimal path
+    """
+    scored_paths = []<a href="#section-2.2.1.6-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-2.2.1.6-3">
+<pre>
+for path in eligible_paths:
+    perf_scores = calculate_performance_score(traffic_profile, path)
+    cost_score = calculate_cost_score(traffic_profile, path)
+    green_score = calculate_green_score(traffic_profile, path)
+    tolerance_scores = evaluate_failure_tolerance(traffic_profile, path)
+
+    # Calculate weighted composite score
+    composite_score = (
+        perf_scores['bandwidth'] * weights['bandwidth'] +
+        perf_scores['latency'] * weights['latency'] +
+        perf_scores['reliability'] * weights['reliability'] +
+        perf_scores['congestion'] * weights['congestion'] +
+        cost_score * weights['cost'] +
+        green_score * weights['environmental'] +
+        tolerance_scores['rtt_tolerance'] * weights['rtt_tolerance'] +
+        tolerance_scores['bandwidth_tolerance'] * weights['bw_tolerance'] +
+        tolerance_scores['availability'] * weights['availability']
+    )
+
+    # Apply priority multiplier
+    priority_multiplier = get_priority_multiplier(traffic_profile.priority)
+    final_score = composite_score * priority_multiplier
+
+    scored_paths.append({
+        'path': path,
+        'score': final_score,
+        'component_scores': {
+            'performance': perf_scores,
+            'cost': cost_score,
+            'environmental': green_score,
+            'tolerance': tolerance_scores
+        }
+    })
+
+# Sort by score (descending)
+scored_paths.sort(key=lambda x: x['score'], reverse=True)
+
+if not scored_paths:
+    return None, 0.0, []
+
+# Select best path and prepare fallbacks
+best_path = scored_paths[0]
+fallback_paths = [sp['path'] for sp in scored_paths[1:4]]  # Top 3 alternatives
+
+# Calculate confidence based on score separation
+confidence = calculate_confidence_score(scored_paths)
+
+return best_path['path'], confidence, fallback_paths ```
+</pre><a href="#section-2.2.1.6-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="step-7-dynamic-re-evaluation">
+<section id="section-2.2.1.7">
+            <h5 id="name-step-7-dynamic-re-evaluatio">
+<a href="#section-2.2.1.7" class="section-number selfRef">2.2.1.7. </a><a href="#name-step-7-dynamic-re-evaluatio" class="section-name selfRef">Step 7: Dynamic Re-evaluation</a>
+            </h5>
+<p id="section-2.2.1.7-1">Monitor selected path performance continuously and trigger re-evaluation when degradation exceeds thresholds.
+Implement seamless path migration with minimal service disruption when better alternatives become available.
+The algorithm includes continuous monitoring and re-evaluation capabilities:<a href="#section-2.2.1.7-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.1.7-2">```python
+def continuous_path_monitoring(selected_path, traffic_flow):
+    """
+    Monitor path performance and trigger re-evaluation if needed
+    """
+    while traffic_flow.active:
+        current_metrics = measure_path_performance(selected_path)<a href="#section-2.2.1.7-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-2.2.1.7-3">
+<pre>
+    # Check if path performance has degraded
+    if performance_degraded(current_metrics, expected_performance):
+        # Trigger re-evaluation
+        new_path, confidence, fallbacks = SelectOptimalTunnelPath(
+            traffic_flow.profile,
+            get_current_available_paths(),
+            get_current_constraints(),
+            get_current_weights()
+        )
+
+        if new_path != selected_path and confidence &gt; SWITCH_THRESHOLD:
+            initiate_path_migration(traffic_flow, selected_path, new_path)
+            selected_path = new_path
+
+    time.sleep(MONITORING_INTERVAL) ```
+</pre><a href="#section-2.2.1.7-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="algorithm-flow-diagrams">
+<section id="section-2.2.2">
+          <h4 id="name-algorithm-flow-diagrams">
+<a href="#section-2.2.2" class="section-number selfRef">2.2.2. </a><a href="#name-algorithm-flow-diagrams" class="section-name selfRef">Algorithm Flow Diagrams</a>
+          </h4>
+<p id="section-2.2.2-1">```
+Tunnel Path Selection Algorithm Flow
+====================================<a href="#section-2.2.2-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.2-2">Input Attributes → Traffic Profile (T) + Available Paths (P) + Policy Constraints (C) + Weights (W)
+     │
+     ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│  STEP 1: POLICY FILTERING                                                           │
+│  ────────────────────────                                                           │
+│  Input: Traffic Profile (Geographic, Compliance, Encryption, Data Sovereignty)     │
+│  Process: Filter paths based on hard security constraints                          │
+│  Output: Eligible Paths (Filtered P)                                               │
+└──────────────────────────────────┬──────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│  STEP 2: PERFORMANCE SCORING                                                        │
+│  ──────────────────────────                                                         │
+│  Input: Traffic Profile (Min Bandwidth, Max Latency, Duration)                     │
+│  Process: Calculate scores for Bandwidth, Latency, Reliability, Congestion         │
+│  Output: Performance Scores per Path                                                │
+└──────────────────────────────────┬──────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│  STEP 3: COST-BENEFIT ANALYSIS (Based on Input Attributes)                         │
+│  ─────────────────────────────────────────────────────                             │
+│  Input: Traffic Profile (Data Volume, Duration, Max Cost)                          │
+│  Process: Calculate data_cost + duration_cost + setup_cost                         │
+│  Output: Cost Scores per Path                                                       │
+└──────────────────────────────────┬──────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│  STEP 4: ENVIRONMENTAL IMPACT SCORING (Based on Input Attributes)                  │
+│  ────────────────────────────────────────────────────────────────                  │
+│  Input: Traffic Profile (Green Preferences, Geographic Constraints)                │
+│  Process: Score Carbon Intensity, Renewable %, Energy Efficiency, Route Efficiency │
+│  Output: Environmental Scores per Path                                              │
+└──────────────────────────────────┬──────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│  STEP 5: FAILURE TOLERANCE EVALUATION (Based on Input Attributes)                  │
+│  ────────────────────────────────────────────────────────────────                  │
+│  Input: Traffic Profile (Max RTT Increase, Min Bandwidth, Min Availability)        │
+│  Process: Check RTT tolerance, Bandwidth tolerance, Availability requirements      │
+│  Output: Tolerance Scores per Path                                                  │
+└──────────────────────────────────┬──────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│  STEP 6: COMPOSITE SCORING AND SELECTION                                           │
+│  ───────────────────────────────────────                                           │
+│  Input: All Previous Scores + Optimization Weights (W)                             │
+│  Process: Calculate weighted composite score for each path                          │
+│  Output: Selected Path + Confidence Score + Fallback Paths                         │
+└──────────────────────────────────┬──────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│  STEP 7: DYNAMIC RE-EVALUATION                                                     │
+│  ─────────────────────────────                                                     │
+│  Input: Current Path Performance + Original Traffic Profile                        │
+│  Process: Continuous monitoring and trigger re-evaluation if degraded              │
+│  Output: Path Migration Decision (if needed)                                       │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```<a href="#section-2.2.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="algorithm-configuration-and-weights">
+<section id="section-2.2.3">
+          <h4 id="name-algorithm-configuration-and">
+<a href="#section-2.2.3" class="section-number selfRef">2.2.3. </a><a href="#name-algorithm-configuration-and" class="section-name selfRef">Algorithm Configuration and Weights</a>
+          </h4>
+<p id="section-2.2.3-1">The algorithm uses configurable weights to adapt to different deployment scenarios:<a href="#section-2.2.3-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.3-2">```yaml
+algorithm_weights:
+  # Performance factors (sum to 1.0)
+  bandwidth: 0.25
+  latency: 0.20
+  reliability: 0.20
+  congestion: 0.15<a href="#section-2.2.3-2" class="pilcrow">¶</a></p>
+<p id="section-2.2.3-3"># Operational factors
+  cost: 0.10
+  environmental: 0.05<a href="#section-2.2.3-3" class="pilcrow">¶</a></p>
+<p id="section-2.2.3-4"># Tolerance factors
+  rtt_tolerance: 0.02
+  bw_tolerance: 0.02
+  availability: 0.01<a href="#section-2.2.3-4" class="pilcrow">¶</a></p>
+<p id="section-2.2.3-5"># Priority multipliers for different traffic classes
+  priority_multipliers:
+    critical: 1.5
+    high: 1.2
+    normal: 1.0
+    low: 0.8<a href="#section-2.2.3-5" class="pilcrow">¶</a></p>
+<p id="section-2.2.3-6"># Thresholds for decision making
+  thresholds:
+    minimum_acceptable_score: 0.6
+    path_switch_threshold: 0.15  # Switch if new path scores 15% higher
+    monitoring_interval: "30s"
+    re_evaluation_triggers:
+      - "rtt_increase &gt; 50%"
+      - "bandwidth_drop &gt; 20%"
+      - "packet_loss &gt; 1%"
+      - "availability &lt; sla_requirement"
+```<a href="#section-2.2.3-6" class="pilcrow">¶</a></p>
+<p id="section-2.2.3-7">Prior work that standardized algorithms for networking include:<a href="#section-2.2.3-7" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.2.3-8.1">
+              <p id="section-2.2.3-8.1.1">Happy Eyeballs <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> and Happy Eyeballs Version 2 <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> algorithms for dual-stack hosts<a href="#section-2.2.3-8.1.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
+</section>
+</div>
+</section>
+</div>
+<div id="design-goals">
+<section id="section-2.3">
+        <h3 id="name-design-goals">
+<a href="#section-2.3" class="section-number selfRef">2.3. </a><a href="#name-design-goals" class="section-name selfRef">Design goals</a>
+        </h3>
+<p id="section-2.3-1">The goal of standardizing such a path selection algorithm is to enable the network devices including endpoints to make decisions independently when choosing path characteristics over others. An endpoint, for example, can achieve different prioritization based on the application contained inside flows. At the network devices the decision can be propagated or the device can re-use the same decision making algorithms at its end with richer data points to make a more optimized decision.
+The goals of this design are as follows :
+* Applications do not need to understand Failover Groups with multiple uplinks.
+* Avoid strict priority ordering of multiple paths.
+* Avoid static scheduling algorithms such as weighted round robin which do not benefit the majority of use cases such as low latency path for time-sensitive data.
+* Other indirect impacts of the algorithm may also be to overcome strategies which unfairly maximize bandwidth usage in the public internet.<a href="#section-2.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="sdwan-sase-benefits">
+<section id="section-2.4">
+        <h3 id="name-benefits-for-sd-wan-and-sas">
+<a href="#section-2.4" class="section-number selfRef">2.4. </a><a href="#name-benefits-for-sd-wan-and-sas" class="section-name selfRef">Benefits for SD-WAN and SASE Architectures</a>
+        </h3>
+<p id="section-2.4-1">The standardized congestion-aware multipath tunnel selection algorithm provides significant advantages for Software-Defined Wide Area Network (SD-WAN) and Secure Access Service Edge (SASE) deployments:<a href="#section-2.4-1" class="pilcrow">¶</a></p>
+<p id="section-2.4-2"><strong>Unified Path Selection Framework</strong>: The standardized algorithm enables consistent path selection decisions across heterogeneous SD-WAN deployments, regardless of vendor-specific implementations. This addresses a key challenge in multi-vendor SD-WAN environments where different vendors may use incompatible path selection algorithms.<a href="#section-2.4-2" class="pilcrow">¶</a></p>
+<p id="section-2.4-3"><strong>Dynamic Service Chaining</strong>: SD-WAN architectures benefit from the algorithm's ability to dynamically route traffic through appropriate service chains based on real-time network conditions and security requirements. This enables optimal integration with Network Function Virtualization (NFV) and service function chaining deployments.<a href="#section-2.4-3" class="pilcrow">¶</a></p>
+<p id="section-2.4-4"><strong>Branch Office Optimization</strong>: The algorithm's consideration of cost factors and environmental impact aligns with SD-WAN's focus on optimizing branch office connectivity, enabling automatic selection between MPLS, broadband, and cellular connections based on application requirements and cost constraints.<a href="#section-2.4-4" class="pilcrow">¶</a></p>
+<p id="section-2.4-5"><strong>Zero-Touch Provisioning</strong>: The standardized approach supports ero-touch provisioning capabilities by providing automated path selection without requiring manual configuration of complex routing policies at each branch location.<a href="#section-2.4-5" class="pilcrow">¶</a></p>
+<p id="section-2.4-6"><strong>Integrated Security and Networking</strong>: SASE architectures benefit from the algorithm's ability to make security-aware path selection decisions that integrate network optimization with security policy enforcement, supporting the SASE principle of converged networking and security.<a href="#section-2.4-6" class="pilcrow">¶</a></p>
+<p id="section-2.4-7"><strong>Edge-to-Cloud Optimization</strong>: The algorithm's multi-dimensional scoring approach optimizes paths between edge locations and cloud services, considering latency, security, and compliance requirements that are critical for SASE deployments.<a href="#section-2.4-7" class="pilcrow">¶</a></p>
+<p id="section-2.4-8"><strong>Dynamic Service Selection</strong>: SASE environments require dynamic selection between different security service instances (firewall, secure web gateway, CASB) based on traffic characteristics and performance requirements, which the algorithm supports through its service-aware path selection capabilities.<a href="#section-2.4-8" class="pilcrow">¶</a></p>
+<div id="zero-trust-considerations">
+<section id="section-2.4.1">
+          <h4 id="name-zero-trust-security-conside">
+<a href="#section-2.4.1" class="section-number selfRef">2.4.1. </a><a href="#name-zero-trust-security-conside" class="section-name selfRef">Zero Trust Security Considerations</a>
+          </h4>
+<p id="section-2.4.1-1">In zero trust network architectures, traditional network-based trust assumptions are eliminated, requiring more sophisticated approaches to traffic classification and path selection. DSCP marking limitations present significant security and privacy risks in zero trust environments, as these markings can be easily spoofed or manipulated by malicious actors, making them unreliable indicators of actual traffic priority or security requirements. Furthermore, consistent DSCP marking patterns may reveal sensitive information about traffic nature, application types, and business processes to unauthorized observers, while violating zero trust principles that mandate "never trust, always verify" by inherently trusting network-provided markings without independent verification of their authenticity or accuracy.<a href="#section-2.4.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.4.1-2">The proposed algorithm addresses these zero trust challenges through self verifying traffic characteristics rather than relying on easily spoofed network markings.<a href="#section-2.4.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="algorithms-requirements">
+<section id="section-2.5">
+        <h3 id="name-algorithms-requirements">
+<a href="#section-2.5" class="section-number selfRef">2.5. </a><a href="#name-algorithms-requirements" class="section-name selfRef">Algorithm's Requirements</a>
+        </h3>
+<p id="section-2.5-1">The algorithm has primary goal of optimization the network path for the traffic stream for achieving the best result in terms of fairness and criticality. This algorithm must be implemented on a stateful system where the sender can make decisions on the path to be traversed.<a href="#section-2.5-1" class="pilcrow">¶</a></p>
+<p id="section-2.5-2">The algorithm requires prior categorization pf paths such as uplinks based on their characteristics as type and bandwidth for example ethernet/10 megabit per second or cellular/5 megabit per second. The algorithm also requires available tunneling protocols for data transfer such as GRE, L2P, IPSec, OpenVPN and even propertiary protocols such as AutoVPN as avaiable.<a href="#section-2.5-2" class="pilcrow">¶</a></p>
+<p id="section-2.5-3">The algorithm doesnot involve the approach to break out critical traffic from non-critical traffic. The algorithm should fairly suggest what traffic is to be passed through the available best path or failover to best path when experincing issues such as loss, jitter on current path.<a href="#section-2.5-3" class="pilcrow">¶</a></p>
+<p id="section-2.5-4">It should
+- encourage load sharing between available paths
+- collect all data points in realtime
+- weights for various data points must be adjustable
+- have the ability to input feedback from observed performance which may be due to nested congestion control or multi-layer redudnant security etc<a href="#section-2.5-4" class="pilcrow">¶</a></p>
+<p id="section-2.5-5">It should not
+- cause a surge of unnecessary traffic
+- be impacted by NAT setups
+- impact the outbound firewall policies<a href="#section-2.5-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="implementation-strategies">
+<section id="section-2.6">
+        <h3 id="name-implementation-strategies">
+<a href="#section-2.6" class="section-number selfRef">2.6. </a><a href="#name-implementation-strategies" class="section-name selfRef">Implementation Strategies</a>
+        </h3>
+<p id="section-2.6-1">The simplest venue for the implementation of the Path selection algorithm is within the application itself.<a href="#section-2.6-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.6-2.1">
+            <p id="section-2.6-2.1.1">Minimal OS support : This algorithm require no specific support from the operating system beyond the commonly available APIs that provide transport service.<a href="#section-2.6-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.6-2.2">
+            <p id="section-2.6-2.2.1">Feedback loop : The algorithm has feedback on the path consumed by all applications for this sender and tries to balance the utilization by load balacing between them.
+The proposed path selection algorithm is only tasked with suggesting the protocol and path and can be overridden by the application.<a href="#section-2.6-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.6-2.3">
+            <p id="section-2.6-2.3.1">Course correction : While the algorithm relies on the data points to suggest a transport protocol on a link, it can also be misguided by ambiguous or untrust worthy input. The algorithm should be self correcting with the help of feedback and any course correction should minimally impact  cross traffic.<a href="#section-2.6-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-2.6-3">Examples of the decision that may be taken by the standardized algorithm could include:
+- Example 1 : Resource intensive ultra low latency application benefit from direct internet connection such as multiplayer games and if the algorithm's path suggestion doesn't meet the latency target the application can select its own path.
+```
+Example 1: Multiplayer Games - Ultra Low Latency Path Selection
+==============================================================<a href="#section-2.6-3" class="pilcrow">¶</a></p>
+<p id="section-2.6-4">Input Parameters (Gaming Scenario)     Selection Algorithm              Output Decision
+===================================     ===================              ===============<a href="#section-2.6-4" class="pilcrow">¶</a></p>
+<p id="section-2.6-5">Bandwidth: 100Mbps ─────────────────┐
+                                    │
+Network State: ────────────────────┐│
+  • 0.1 loss                       ││   ┌─────────────────────────────┐
+  • 0.2 jitter                     ││   │                             │
+                                   ┌┴┴───┤    Selection Algorithm      │    Direct Traffic
+Vulnerability of data: 0.9 ────────┤     │                             │──► on Ethernet
+                                   │     │  Gaming Traffic Detected:   │    (Ultra Low
+Time sensitivity: GAMES ───────────┤─────┤  • High time sensitivity    │     Latency)
+                                   │     │  • Low vulnerability OK     │
+Provisioning domains: 0.5 ─────────┤     │  • Adequate bandwidth       │
+                                   │     │  • Direct path preferred    │
+Criticality: 0.7 ──────────────────┤     │                             │
+                                   │     └─────────────────────────────┘
+```<a href="#section-2.6-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="sec-combined-references">
+<section id="section-3">
+      <h2 id="name-references">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-references" class="section-name selfRef">References</a>
+      </h2>
+<div id="sec-normative-references">
+<section id="section-3.1">
+        <h3 id="name-normative-references">
+<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+        </h3>
+<dl class="references">
+<dt id="RFC2119">[RFC2119]</dt>
+        <dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <time datetime="1997-03" class="refDate">March 1997</time>. </dd>
+<dd class="break"></dd>
+<dt id="RFC3168">[RFC3168]</dt>
+        <dd>
+<span class="refAuthor">Ramakrishnan, K.</span>, <span class="refAuthor">Floyd, S.</span>, and <span class="refAuthor">D. Black</span>, <span class="refTitle">"The Addition of Explicit Congestion Notification (ECN) to IP"</span>, <time datetime="2001-09" class="refDate">September 2001</time>. </dd>
+<dd class="break"></dd>
+<dt id="RFC6040">[RFC6040]</dt>
+        <dd>
+<span class="refAuthor">Briscoe, B.</span>, <span class="refTitle">"Tunnelling of Explicit Congestion Notification"</span>, <time datetime="2010-11" class="refDate">November 2010</time>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8126">[RFC8126]</dt>
+        <dd>
+<span class="refAuthor">Cotton, M.</span>, <span class="refAuthor">Leiba, B.</span>, and <span class="refAuthor">T. Narten</span>, <span class="refTitle">"Guidelines for Writing an IANA Considerations Section in RFCs"</span>, <time datetime="2017-06" class="refDate">June 2017</time>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8174">[RFC8174]</dt>
+        <dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <time datetime="2017-05" class="refDate">May 2017</time>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8305">[RFC8305]</dt>
+        <dd>
+<span class="refAuthor">Schinazi, D.</span> and <span class="refAuthor">T. Pauly</span>, <span class="refTitle">"Happy Eyeballs Version 2: Better Connectivity Using Concurrency"</span>, <time datetime="2017-12" class="refDate">December 2017</time>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9000">[RFC9000]</dt>
+        <dd>
+<span class="refAuthor">Iyengar, J.</span> and <span class="refAuthor">M. Thomson</span>, <span class="refTitle">"QUIC: A UDP-Based Multiplexed and Secure Transport"</span>, <time datetime="2021-05" class="refDate">May 2021</time>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9002">[RFC9002]</dt>
+        <dd>
+<span class="refAuthor">Iyengar, J.</span> and <span class="refAuthor">I. Swett</span>, <span class="refTitle">"QUIC Loss Detection and Congestion Control"</span>, <time datetime="2021-05" class="refDate">May 2021</time>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9599">[RFC9599]</dt>
+      <dd>
+<span class="refAuthor">Briscoe, B.</span> and <span class="refAuthor">J. Kaippallimalil</span>, <span class="refTitle">"Guidelines for Adding Congestion Notification to Protocols that Encapsulate IP"</span>, <time datetime="2024-08" class="refDate">August 2024</time>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="sec-informative-references">
+<section id="section-3.2">
+        <h3 id="name-informative-references">
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+        </h3>
+<dl class="references">
+<dt id="CAREFUL-RESUME">[CAREFUL-RESUME]</dt>
+        <dd>
+<span class="refAuthor">Seemann, M.</span> and <span class="refAuthor">I. Swett</span>, <span class="refTitle">"Convergence of Congestion Control from Retained State"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-tsvwg-careful-resume-24</span>, <time datetime="2025-10" class="refDate">October 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-careful-resume-24">https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-careful-resume-24</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.ietf-intarea-tunnels">[I-D.ietf-intarea-tunnels]</dt>
+        <dd>
+<span class="refAuthor">Touch, J. D.</span> and <span class="refAuthor">M. Townsley</span>, <span class="refTitle">"IP Tunnels in the Internet Architecture"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-intarea-tunnels-15</span>, <time datetime="2025-05-09" class="refDate">9 May 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-intarea-tunnels-15">https://datatracker.ietf.org/doc/html/draft-ietf-intarea-tunnels-15</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="L4S-OPS">[L4S-OPS]</dt>
+        <dd>
+<span class="refAuthor">Briscoe, B.</span>, <span class="refTitle">"Operational Guidance on Coexistence with Classic ECN during L4S Deployment"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-tsvwg-l4sops-08</span>, <time datetime="2025-07" class="refDate">July 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-l4sops-08">https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-l4sops-08</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="MULTIPATH-DCCP">[MULTIPATH-DCCP]</dt>
+        <dd>
+<span class="refAuthor">Dreibholz, A.</span>, <span class="refTitle">"DCCP Extensions for Multipath Operation with Multiple Addresses"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-tsvwg-multipath-dccp-24</span>, <time datetime="2025-04" class="refDate">April 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-multipath-dccp-24">https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-multipath-dccp-24</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="NQB-PHB">[NQB-PHB]</dt>
+        <dd>
+<span class="refAuthor">White, G.</span>, <span class="refAuthor">Fossati, T.</span>, and <span class="refAuthor">R. Geib</span>, <span class="refTitle">"A Non-Queue-Building Per-Hop Behavior (NQB PHB) for Differentiated Services"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-tsvwg-nqb-33</span>, <time datetime="2025-09" class="refDate">September 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-nqb-33">https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-nqb-33</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC2992">[RFC2992]</dt>
+        <dd>
+<span class="refAuthor">Hopps, C.</span>, <span class="refTitle">"Analysis of an Equal-Cost Multi-Path Algorithm"</span>, <time datetime="2000-11" class="refDate">November 2000</time>. </dd>
+<dd class="break"></dd>
+<dt id="RFC3270">[RFC3270]</dt>
+        <dd>
+<span class="refAuthor">Le Faucheur, F., Ed.</span>, <span class="refAuthor">Wu, L.</span>, <span class="refAuthor">Davie, B.</span>, <span class="refAuthor">Davari, S.</span>, <span class="refAuthor">Vaananen, P.</span>, <span class="refAuthor">Krishnan, R.</span>, <span class="refAuthor">Cheval, P.</span>, and <span class="refAuthor">J. Heinanen</span>, <span class="refTitle">"Multi-Protocol Label Switching (MPLS) Support of Differentiated Services"</span>, <span class="seriesInfo">RFC 3270</span>, <span class="seriesInfo">DOI 10.17487/RFC3270</span>, <time datetime="2002-05" class="refDate">May 2002</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc3270">https://www.rfc-editor.org/rfc/rfc3270</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC4459">[RFC4459]</dt>
+        <dd>
+<span class="refAuthor">Savola, P.</span>, <span class="refTitle">"MTU and Fragmentation Issues with In-the-Network Tunneling"</span>, <time datetime="2006-04" class="refDate">April 2006</time>. </dd>
+<dd class="break"></dd>
+<dt id="RFC5764">[RFC5764]</dt>
+        <dd>
+<span class="refAuthor">McGrew, D.</span> and <span class="refAuthor">E. Rescorla</span>, <span class="refTitle">"Datagram Transport Layer Security (DTLS) Extension to Establish Keys for the Secure Real-time Transport Protocol (SRTP)"</span>, <span class="seriesInfo">RFC 5764</span>, <span class="seriesInfo">DOI 10.17487/RFC5764</span>, <time datetime="2010-05" class="refDate">May 2010</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc5764">https://www.rfc-editor.org/rfc/rfc5764</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC6555">[RFC6555]</dt>
+        <dd>
+<span class="refAuthor">Wing, D.</span> and <span class="refAuthor">A. Yourtchenko</span>, <span class="refTitle">"Happy Eyeballs: Success with Dual-Stack Hosts"</span>, <time datetime="2012-04" class="refDate">April 2012</time>. </dd>
+<dd class="break"></dd>
+<dt id="RFC7556">[RFC7556]</dt>
+        <dd>
+<span class="refAuthor">Anipko, D., Ed.</span>, <span class="refTitle">"Multiple Provisioning Domain Architecture"</span>, <span class="seriesInfo">RFC 7556</span>, <span class="seriesInfo">DOI 10.17487/RFC7556</span>, <time datetime="2015-06" class="refDate">June 2015</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc7556">https://www.rfc-editor.org/rfc/rfc7556</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8801">[RFC8801]</dt>
+        <dd>
+<span class="refAuthor">Pfister, P.</span>, <span class="refAuthor">Vyncke, É.</span>, <span class="refAuthor">Pauly, T.</span>, <span class="refAuthor">Schinazi, D.</span>, and <span class="refAuthor">W. Shao</span>, <span class="refTitle">"Discovering Provisioning Domain Names and Data"</span>, <span class="seriesInfo">RFC 8801</span>, <span class="seriesInfo">DOI 10.17487/RFC8801</span>, <time datetime="2020-07" class="refDate">July 2020</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8801">https://www.rfc-editor.org/rfc/rfc8801</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8807">[RFC8807]</dt>
+        <dd>
+<span class="refAuthor">Gould, J.</span> and <span class="refAuthor">M. Pozun</span>, <span class="refTitle">"Login Security Extension for the Extensible Provisioning Protocol (EPP)"</span>, <span class="seriesInfo">RFC 8807</span>, <span class="seriesInfo">DOI 10.17487/RFC8807</span>, <time datetime="2020-08" class="refDate">August 2020</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8807">https://www.rfc-editor.org/rfc/rfc8807</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9868">[RFC9868]</dt>
+        <dd>
+<span class="refAuthor">Herbert, T.</span> and <span class="refAuthor">C. Huitema</span>, <span class="refTitle">"Transport Options for UDP"</span>, <span class="seriesInfo">RFC 9868</span>, <time datetime="2024-12" class="refDate">December 2024</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9868">https://www.rfc-editor.org/rfc/rfc9868</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="UDP-ECN">[UDP-ECN]</dt>
+      <dd>
+<span class="refAuthor">Fairhurst, G.</span>, <span class="refTitle">"Configuring UDP Sockets for ECN for Common Platforms"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-tsvwg-udp-ecn-03</span>, <time datetime="2025-08" class="refDate">August 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-udp-ecn-03">https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-udp-ecn-03</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
+</section>
+</div>
+<div id="authors-addresses">
+<section id="appendix-A">
+      <h2 id="name-authors-address">
+<a href="#name-authors-address" class="section-name selfRef">Author's Address</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Altanai Bisht</span></div>
+<div dir="auto" class="left"><span class="org">Cisco Meraki</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:albisht@cisco.com" class="email">albisht@cisco.com</a>
+</div>
+</address>
+</section>
+</div>
+<script>const toc = document.getElementById("toc");
+toc.querySelector("h2").addEventListener("click", e => {
+  toc.classList.toggle("active");
+});
+toc.querySelector("nav").addEventListener("click", e => {
+  toc.classList.remove("active");
+});
+</script>
+</body>
+</html>
