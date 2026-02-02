@@ -2,6 +2,15 @@
 
 This is the working area for the individual Internet-Draft, "Multipath Nested Tunnels".
 
+## Overview
+This draft proposes a standardized algorithm for congestion-aware multipath tunnel selection, addressing challenges in environments with multiple tunneling options and congestion control mechanisms. It aims to optimize path selection, avoid multilevel congestion control issues, and improve interoperability across heterogeneous networks and vendors.
+
+## Key Features
+- Standardized multipath selection algorithm
+- Congestion and ECN-aware path selection
+- Support for nested tunnels and multi-vendor environments
+- Focus on interoperability, performance, and security
+
 * [Editor's Copy](https://altanai.github.io/multipath-nested-tunnels/#go.draft-altanai-tsv-multipath_nested_tunnels.html)
 * [Datatracker Page](https://datatracker.ietf.org/doc/draft-altanai-tsv-multipath_nested_tunnels)
 * [Individual Draft](https://datatracker.ietf.org/doc/html/draft-altanai-tsv-multipath_nested_tunnels)

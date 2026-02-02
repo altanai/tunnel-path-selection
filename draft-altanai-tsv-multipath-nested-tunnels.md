@@ -3,7 +3,7 @@ title: "Congestion-Aware Multipath Tunnel Selection for Transport Services"
 abbrev: "Multipath Tunnel Selection"
 category: std
 
-docname: draft-altanai-tsv-multipath_nested_tunnels-latest
+docname: draft-altanai-tsv-multipath-nested-tunnels-latest
 submissiontype: IETF
 number:
 date: 2025-10-14
@@ -217,7 +217,7 @@ Tunneled traffic path selection is primarily governed by enterprise or service p
 - Policy-based routing that may override optimal path selection for security
 - Service Level Agreement (SLA) enforcement mechanisms
 - Centralized management
-- predterminded ingress and egress points
+- predtermined ingress and egress points
 Unlike open internet traffic where applications can freely choose destinations, tunneled traffic has limited Endpoint Flexibility.
 
 ## Current Path Selection Challenges
@@ -250,11 +250,11 @@ Multiple proprietary implementations increase the overall attack surface as Vend
 
 Proprietary unstandardised best path selection algorithms create dependencies resulting in increased Total Cost of Ownership (TCO) through vendor lock-in. Service quality degradation occurs through inconsistent user experiences with varying service quality depending on which vendor's equipment handles their traffic. Unpredictable path selection behavior also makes it difficult to guarantee service level agreements and createing network  continuity risks. Furthermore, this artificial differentiation fragments innovation as vendor-specific implementations prevent collaborative development of industry-wide improvements, create interoperability stagnation, and establish barriers to technology evolution.
 
-## The Need for Standardization
+### The Need for Standardization
 
 These disadvantages collectively demonstrate the critical importance of standardized path selection algorithms that can ensure consistent behavior by providing predictable path selection decisions across vendor boundaries, enable interoperability through seamless integration of multi-vendor network infrastructure, reduce operational complexity and enable global optimization rather than vendor-specific local optimization, and enhance security through consistent policy enforcement and threat response across all network elements.
 
-### Path discovery overhead and resulting conflicts
+#### Path discovery overhead and resulting conflicts
 
 The absence of standardized path selection algorithms creates significant overhead in discovering optimal paths and leads to widespread fragmentation challenges across heterogeneous tunnel deployments. When networking protocols use hole punching to establish paths between endpoints and multiple tunnels are formed for primary-standby or load sharing configurations, each vendor implements proprietary Path MTU Discovery (PMTUD) mechanisms that operate independently and often conflict with each other. This lack of coordination results in redundant path probing, where multiple vendors simultaneously attempt to discover the same path characteristics, consuming valuable bandwidth and generating unnecessary control traffic. The fragmentation problem is particularly acute because nested tunnels greatly impact traffic quality, with each encapsulation layer introducing additional headers that reduce the effective payload size, leading to frequent fragmentation and defragmentation cycles that increase computational overhead especially for time-sensitive applications operating under limited bandwidth constraints.
 
@@ -335,7 +335,7 @@ ECN tunneling benefits from having existing standards that provide a foundation 
 
 Flow labeling and classification approaches provide the significant advantage of enabling the application of artificially intelligent machine learning models for sophisticated traffic analysis and optimization, allowing for adaptive and predictive traffic management. However, this approach can compromise privacy by potentially exposing sensitive information about user behavior, application usage patterns, and business processes through the classification metadata.
 
-# Proposal to standardise the selection algorithm
+# Proposal to standardize the selection algorithm
 
 The VPN can be considered a limited premium network that protects confidential information of an organization such as business communication between retail stores. Hybrid work and move towards private access has increased the interest in tunneling traffic between endpoints. However at present, the traffic steering decision is made in a limited scoped or rule based manner which is different for various networks and service providers. Instead an alternative dynamic strategy is proposed which gauges the confidence in the various available options dynamically and may choose to send data directly via edge gateway, use one or more of the available tunnels or create a new on-demand tunnel, leveraging any of the tunneling protocols best suited.
 
@@ -883,56 +883,11 @@ algorithm_weights:
       - "availability < sla_requirement"
 ```
 
-[Figure: Algorithm flow diagram - shows the complete path selection algorithm decision flow]
-```
-Congestion-Aware Multipath Tunnel Selection Algorithm
-=====================================================
-
-Input Parameters                    Decision Making Algorithm                Output
-================                    ========================                ======
-
-Bandwidth ─────────────────────┐
-                               │
-Network State ─────────────────┤
-                               │    ┌─────────────────────────────────┐
-Vulnerability of data ─────────┤────┤                                 │
-                               │    │    Decision Making Algorithm    │    Algorithm's
-Time sensitivity of data ──────┤────┤                                 │──► Suggested
-                               │    │  ┌─────────────────────────────┐ │    Path
-Sample dataframe ──────────────┤────┤  │                             │ │
-                               │    │  │  ┌─ n random pkt selector   │ │
-Provisioning domains ──────────┤────┤  │  │                          │ │
-                               │    │  │  └─ ? other process         │ │
-Criticality ───────────────────┤────┤  │     components              │ │
-                               │    │  │                             │ │
-Carbon footprint ──────────────┤────┤  └─────────────────────────────┘ │
-                               │    │                                 │
-Cost/available credits ────────┘    └─────────────────────────────────┘
-                                               │
-                                               ▼
-                                    Available Path Options
-                                    ======================
-                                               │
-                        ┌──────────────────────┼──────────────────────┐
-                        │                      │                      │
-                    ┌───▼───┐              ┌───▼───┐              ┌───▼───┐
-                    │UPLINK │              │TUNNEL │              │ ETC   │
-                    └───┬───┘              └───┬───┘              └───────┘
-                        │                      │
-              ┌─────────┼─────────┐           │
-              │         │         │           │
-          ┌───▼───┐ ┌───▼───┐ ┌───▼───┐   ┌───▼───┐
-          │Ethernet│ │Fibre  │ │Cellular│   │MASQUE │
-          └───────┘ └───────┘ └───────┘   └───┬───┘
-                                              │
-                                    ┌─────────┼─────────┐
-                                    │         │         │
-                                ┌───▼───┐ ┌───▼───┐ ┌───▼───┐
-                                │Network│ │Direct/│ │  ...  │
-                                │Tunnel │ │Split  │ │       │
-                                │       │ │Tunnel │ │       │
-                                └───────┘ └───────┘ └───────┘
-```
+[figure: algorithm flow diagram]: # "Algorithm flow diagram - shows the complete path selection algorithm decision flow"
+[diagram: prioritization across networks]: # "Prioritization across networks - shows how different networks may prioritize the same traffic differently"
+[diagram: masque quic multiplexing architecture]: # "MASQUE QUIC multiplexing architecture showing stream multiplexing over HTTP/3"
+[figure 2: example 2 - voip e911 direct signaling]: # "Example 2 - VoIP E911 direct signaling with WebRTC P2P media path"
+[figure 3: example 3 - sip trunk calls over dedicated ipsec tunnel]: # "Example 3 - SIP trunk calls over dedicated IPsec tunnel"
 
 Prior work that standardized algorithms for networking include:
 
@@ -1024,348 +979,4 @@ Provisioning domains: 0.5 ─────────┤     │  • Adequate b
                                    │     │  • Direct path preferred    │
 Criticality: 0.7 ──────────────────┤     │                             │
                                    │     └─────────────────────────────┘
-Carbon footprint: null ────────────┤                   │
-                                   │                   │
-Cost/available credits: unlimited ──┘                   ▼
-                                              Path Selection Logic
-                                              ===================
-                                                       │
-                                    ┌──────────────────┼──────────────────┐
-                                    │                  │                  │
-                                ┌───▼───┐          ┌───▼───┐          ┌───▼───┐
-                                │UPLINK │          │TUNNEL │          │OTHER  │
-                                │       │          │       │          │       │
-                                └───┬───┘          └───┬───┘          └───────┘
-                                    │                  │
-                          ┌─────────┼─────────┐       │
-                          │         │         │       │
-                      ┌───▼───┐ ┌───▼───┐ ┌───▼───┐   │
-                      │Broad- │ │Ether- │ │Cellular│   │
-                      │ band  │ │ net   │ │        │   │
-                      └───────┘ └───█───┘ └───────┘   │
-                                     │                │
-                                  SELECTED            │
-                                                      │
-                                              ┌───────┼───────┐
-                                              │       │       │
-                                          ┌───▼───┐ ┌─▼─┐ ┌───▼───┐
-                                          │MASQUE │ │N/T│ │Direct/│
-                                          │       │ │   │ │Split  │
-                                          └───────┘ └───┘ └───────┘
-                                                           NOT USED
-                                                          (Too high
-                                                           latency)
-
-Decision Rationale:
-==================
-✓ Gaming traffic requires ultra-low latency
-✓ Vulnerability score (0.9) acceptable for gaming data
-✓ Direct ethernet provides lowest latency path
-✓ No tunneling overhead needed for multiplayer games
-✓ Cost not a factor (unlimited credits)
-✗ Tunneling rejected due to added latency
 ```
-
-- Example 2 :  VoIP signaling traffic in case of E911 benefit from direct non-tunneled setup such as shown below. Additionally the media could be shared on WebRTC’s SRTP/DTLS format which creates a peer-to-peer path to tunnel media traffic.
-[Figure 2: Example 2 - VoIP E911 direct signaling with WebRTC P2P media path]
-
-- Example 3 : SIP trunk calls may actually benefit from a dedicated IPSec tunnel, pre NATed, pre authenticated and secure, as it would avoid the delay in resetting the path given the volume of calls expected between two endpoints.
-[Figure 3: Example 3 - SIP trunk calls over dedicated IPSec tunnel]
-
-- Example 4 : Heavy file downloads such as VoD could benefit by load sharing between multiple tunnels.
-```
-Example 4: Media Streaming using CDN - Load Sharing Across Multiple Tunnels
-===========================================================================
-
-Input Parameters (VoD/Streaming)       Selection Algorithm              Output Decision
-====================================    ===================              ===============
-
-Bandwidth: 100Mbps ─────────────────┐
-                                    │
-Network State: ────────────────────┐│
-  • 0.1 jitter                     ││   ┌─────────────────────────────┐
-  • 60ms RTT                       ││   │                             │
-  • 0.3 loss                       ┌┴┴───┤    Selection Algorithm      │    MASQUE
-                                   │     │                             │──► Multi-tunnel
-Vulnerability of data: 0.8 ────────┤     │  Media Streaming Detected:  │    Load Sharing
-                                   │     │  • Bulk transfer suitable   │
-Time sensitivity: 0.5 ─────────────┤─────┤  • High bandwidth needed    │
-                                   │     │  • Load sharing beneficial  │
-Provisioning domains: VoIP ────────┤     │  • Multiple paths optimal   │
-                                   │     │                             │
-Criticality: 0.4 ──────────────────┤     └─────────────────────────────┘
-                                   │                   │
-Carbon footprint: 0.5 ─────────────┤                   │
-                                   │                   ▼
-Cost/available credits: 0.8 ───────┘           Path Selection Logic
-                                              ===================
-                                                       │
-                                    ┌──────────────────┼──────────────────┐
-                                    │                  │                  │
-                                ┌───▼───┐          ┌───▼───┐          ┌───▼───┐
-                                │UPLINK │          │TUNNEL │          │OTHER  │
-                                │       │          │       │          │       │
-                                └───┬───┘          └───█───┘          └───────┘
-                                    │                  │
-                          ┌─────────┼─────────┐       │ SELECTED
-                          │         │         │       │
-                      ┌───▼───┐ ┌───▼───┐ ┌───▼───┐   │
-                      │Broad- │ │Ether- │ │Cellular│   │
-                      │ band  │ │ net   │ │        │   │
-                      └───█───┘ └───█───┘ └───█───┘   │
-                           │        │        │        │
-                        ALL USED FOR LOAD SHARING     │
-                                                      │
-                                              ┌───────┼───────┐
-                                              │       │       │
-                                          ┌───▼───┐ ┌─▼─┐ ┌───▼───┐
-                                          │MASQUE │ │N/T│ │Direct/│
-                                          │ ████  │ │   │ │Split  │
-                                          └───────┘ └───┘ └───────┘
-                                           SELECTED
-
-Load Sharing Strategy:
-=====================
-┌─────────────────────────────────────────────────────────────────┐
-│                    VoD Content Distribution                     │
-├─────────────────────────────────────────────────────────────────┤
-│  Broadband ──┐                                                 │
-│              ├──► MASQUE Tunnel 1 ──┐                          │
-│  Ethernet ───┤                      ├──► Combined VoD Stream   │
-│              ├──► MASQUE Tunnel 2 ──┤                          │
-│  Cellular ───┘                      └──► to CDN/Client         │
-│                                                                 │
-│  Benefits:                                                      │
-│  • Aggregate bandwidth from all paths                          │
-│  • Resilience against single path failure                      │
-│  • Optimal for large file transfers                            │
-│  • CDN-friendly multiplexed streams                            │
-└─────────────────────────────────────────────────────────────────┘
-
-Decision Rationale:
-==================
-✓ Large bandwidth requirement suits multi-path approach
-✓ Low time sensitivity (0.5) allows for tunnel overhead
-✓ MASQUE enables efficient stream multiplexing
-✓ Load sharing maximizes available bandwidth
-✓ Resilient to individual path degradation
-✓ Cost-effective use of multiple uplinks
-✗ Single direct path insufficient for VoD bandwidth needs
-```
-
-- Example 5 : Management Information Base(MiB) for Internet Small Computer System Interface (iSCSI) can be sent over IpSec Tunnel for longer haul networks such as accross datacentres.
-
-### Edge cases
-- Missing Datapoints : In the edge case where  there are no other data points to compute the selection logic then every avaiable concurrent path would get a weighted proportion of traffic based on its bandwidth cap. For example if a system has 2 uplinks capable of tunneling trafic with 25Mbps and 75Mbps then uplink 1 will get 25% of the flows while uplink 2 gets 75%.
-
-- Fail over : In the case, 1 out of the 2 uplink paths being monitored by the algorithm fail, it would then attempt to shape the traffic such that 100% of the load ends up on the same uplink. Note that even on the same uplink the algorithm can suggest different protocols such as Network tunnel, aplication specific tunnel over HTTP proxy or even open access based on the data points.
-
-### Integration with TSVWG Standards
-
-The congestion control approach aligns with current TSVWG work:
-
-1. **NQB PHB Compatibility**: The algorithm can identify and properly handle Non-Queue-Building (NQB) traffic that should not be subjected to aggressive congestion control.
-
-2. **Careful Resume Principles**: When switching paths or resuming connections, the algorithm implements careful congestion control restart procedures to avoid traffic bursts.
-
-3. **L4S ECN Handling**: The system supports Low Latency, Low Loss, and Scalable Throughput (L4S) ECN markings for appropriate traffic classification.
-
-# Conventions and Definitions
-
-{::boilerplate bcp14-tagged}
-
-## Terminology
-
-This document uses the following terms:
-
-**Congestion-Aware Path Selection**: A mechanism that considers congestion indicators, including ECN markings and queue delays, when choosing among multiple available network paths.
-
-**Nested Tunneling**: The practice of encapsulating one tunnel protocol within another, potentially leading to multiple layers of congestion control mechanisms.
-
-**Transport-Layer Tunnel**: A tunnel that operates at the transport layer, such as QUIC-based tunnels via MASQUE, as opposed to network-layer tunnels like IPsec.
-
-**ECN Compatibility Mode**: A mode of operation where tunnel endpoints properly propagate ECN markings according to {{RFC6040}} and {{RFC9599}} guidelines.
-
-**Non-Queue-Building (NQB) Traffic**: Traffic that does not contribute to persistent queue build-up, as defined in the TSVWG NQB PHB specification.
-
-**Careful Resume**: The practice of carefully restarting congestion control algorithms when resuming connections, avoiding sudden traffic bursts that could cause congestion.
-
-**Path Characteristics Vector**: A multi-dimensional representation of path properties including bandwidth, latency, loss rate, congestion indicators, and tunnel overhead.
-
-**Transport Service Selection**: The process of choosing appropriate transport protocols and parameters based on application requirements and network conditions.
-
-
-# Security Considerations {#security}
-
-This section analyzes security implications of congestion-aware multipath tunnel selection, addressing both transport-layer security concerns and privacy considerations.
-
-## Trust Model and Authentication
-
-### Tunnel Endpoint Authentication
-The algorithm requires proper authentication of tunnel endpoints to prevent man-in-the-middle attacks. Implementations MUST:
-
-1. Verify tunnel endpoint certificates using standard PKI validation
-2. Implement proper key exchange mechanisms for each supported tunneling protocol
-3. Maintain separate security associations for different paths to prevent cross-contamination
-
-### Metrics Integrity
-Path selection metrics used by the algorithm may be subject to manipulation:
-
-1. **ECN Marking Spoofing**: Adversaries may manipulate ECN markings to influence path selection decisions. Implementations SHOULD validate ECN markings against other congestion indicators.
-
-2. **RTT Manipulation**: Network attackers may artificially inflate or deflate RTT measurements. The algorithm SHOULD use multiple measurement techniques and outlier detection.
-
-3. **Bandwidth Estimation Attacks**: False bandwidth estimates can lead to suboptimal path selection. Implementations SHOULD cross-validate bandwidth measurements from multiple sources.
-
-## Privacy Considerations
-
-### Traffic Analysis Risks
-The path selection algorithm may inadvertently leak information about traffic patterns:
-
-1. **Path Selection Patterns**: Consistent path choices for specific applications may reveal user behavior. Implementations SHOULD introduce controlled randomization in path selection for equivalent paths.
-
-2. **Metric Collection Privacy**: Collection of network metrics may expose sensitive information about user location and network topology. Implementations MUST minimize metric collection and implement proper data anonymization.
-
-### Split Tunneling Security
-Split tunneling decisions present particular security challenges:
-
-1. **Enterprise Policy Bypass**: Split tunneling may bypass corporate firewall rules and threat prevention systems. Enterprise deployments MUST implement policy controls that override algorithm decisions when necessary.
-
-2. **Traffic Correlation**: Non-tunneled traffic may be subject to analysis by ISPs or government surveillance. Users MUST be informed when traffic is sent outside tunnel protection.
-
-## Transport Security Integration
-
-### Nested Encryption Overhead
-Multiple layers of encryption in nested tunnels create security and performance tradeoffs:
-
-1. **Cryptographic Overhead**: Multiple encryption layers increase computational costs without proportional security benefits. The algorithm SHOULD favor end-to-end encryption over nested tunnel encryption where security policies permit.
-
-2. **Key Management Complexity**: Managing keys for multiple tunnel layers increases attack surface. Implementations SHOULD consolidate key management where possible.
-
-### ECN Security Implications
-ECN propagation in tunnels has security considerations:
-
-1. **Information Disclosure**: ECN markings may reveal network topology information. Tunnel implementations SHOULD consider whether to preserve or sanitize ECN markings based on security policies.
-
-2. **Covert Channels**: ECN fields may be used for covert communication. Implementations operating in high-security environments SHOULD monitor ECN field usage patterns.
-
-## Implementation Security
-
-### Algorithm Side Channels
-The path selection algorithm itself may create security vulnerabilities:
-
-1. **Timing Attacks**: Path selection timing may reveal information about network conditions or user behavior. Implementations SHOULD use constant-time algorithms where feasible.
-
-2. **Resource Exhaustion**: Malicious network conditions may cause the algorithm to consume excessive computational resources. Implementations MUST implement appropriate rate limiting and resource controls.
-
-### Configuration Security
-Proper configuration is critical for security:
-
-1. **Default Security Posture**: Default configurations SHOULD prefer security over performance optimization.
-
-2. **Administrative Controls**: Network administrators MUST have ability to override algorithm decisions for security-critical traffic.
-
-3. **Audit and Logging**: Implementations SHOULD log path selection decisions for security analysis and compliance purposes.
-
-## Threat Model Considerations
-
-### Adversary Capabilities
-The security analysis assumes adversaries with the following capabilities:
-
-1. **Network Position**: Adversaries may control network infrastructure elements along some paths
-2. **Traffic Injection**: Adversaries may inject or modify packets on network paths
-3. **Timing Analysis**: Adversaries may observe traffic timing patterns
-4. **Configuration Access**: Adversaries may have limited access to system configuration
-
-### Protection Mechanisms
-The proposed algorithm includes several protection mechanisms:
-
-1. **Multi-path Validation**: Using multiple paths for validation reduces single points of failure
-2. **Adaptive Behavior**: Dynamic algorithm behavior makes attacks more difficult to execute
-3. **Fallback Mechanisms**: Secure fallback options ensure availability even under attack
-
-
-## IANA Considerations {#iana}
-
-This document makes the following requests to IANA:
-
-### New Registry for Path Selection Metrics
-
-This document requests the creation of a new registry titled "Congestion-Aware Path Selection Metrics" under the "Transport and Services" registry group. This registry will maintain standardized metric identifiers used by the path selection algorithm.
-
-Initial registry entries:
-
-| Metric ID | Metric Name | Description | Reference |
-|-----------|-------------|-------------|-----------|
-| 0x0001 | ECN-CE-Ratio | Percentage of ECN CE marked packets | This Document |
-| 0x0002 | RTT-Baseline | Baseline round-trip time measurement | This Document |
-| 0x0003 | RTT-Variance | RTT variation coefficient | This Document |
-| 0x0004 | Loss-Rate | Packet loss rate percentage | This Document |
-| 0x0005 | Tunnel-Overhead | Tunnel encapsulation overhead bytes | This Document |
-| 0x0006 | NQB-Classification | Non-Queue-Building traffic indicator | This Document |
-
-### Updates to Existing Registries
-
-#### QUIC Transport Parameter Registry
-
-If MASQUE tunneling is implemented using QUIC transport parameters, this document may require allocation of new transport parameter identifiers for:
-
-- Congestion-aware path selection capabilities
-- ECN propagation mode negotiation
-- Path characteristics vector exchange
-
-#### DSCP Registry Considerations
-
-While this document does not define new DSCP values, implementations should coordinate with the existing DSCP registry to ensure proper handling of:
-
-- NQB PHB markings (DSCP 45 as defined by TSVWG)
-- ECN-capable tunnel endpoints
-- L4S marking preservation through tunnels
-
-
-## Conclusions {#conclusions}
-
-This document addresses the significant challenges posed by multipath tunnel selection in modern transport networks, particularly focusing on congestion control conflicts and ECN handling in multipath and nested tunneling scenarios. The standardized approach provides several advantages by delivering consistency through uniform path selection behavior across heterogeneous network environments, achieving optimized global performance by reducing congestion control conflicts. The algorithmic approach scales better than static configuration-based methods and also facilitates vendor interoperability across diverse network infrastructures.
-
-### Technical Contributions
-
-1. **Congestion-Aware Algorithm**: The proposed multipath tunnel selection algorithm incorporates ECN propagation principles from {{RFC9599}}, ensuring proper congestion notification handling across tunnel boundaries.
-
-2. **TSVWG Alignment**: The approach aligns with current TSVWG work including Non-Queue-Building (NQB) PHB specifications, careful congestion control resume mechanisms, and multipath transport protocols.
-
-3. **Transport Integration**: The algorithm considers transport-layer characteristics and avoids the multilevel congestion control conflicts that plague current ad-hoc approaches.
-
-
-### Deployment Considerations
-
-Successful deployment of this mechanism requires gradual adoption. Also requires enterprise and regulatory policy frameworks that can override algorithmic decisions such as controls addressing privacy and authentication concerns.
-
-### Future Work
-
-Several areas warrant further investigation:
-
-1. **Machine Learning Integration**: Advanced algorithms that can adapt to network patterns and predict optimal paths
-2. **Satellite Network Support**: Specific adaptations for LEO/MEO satellite networks as identified in current TSVWG satellite work
-3. **Energy Efficiency**: Integration of carbon footprint and energy consumption metrics for sustainable networking
-4. **Real-time Adaptation**: Enhanced algorithms for rapid response to changing network conditions
-
-### Standards Impact
-
-This work contributes to the broader IETF transport standardization efforts:
-
-1. **Congestion Control Evolution**: Advances understanding of congestion control in complex tunneling environments
-2. **ECN Deployment**: Provides practical guidance for ECN implementation in tunnel scenarios
-3. **Transport Services**: Enhances the transport services framework with path selection capabilities
-
-The proposed congestion-aware multipath tunnel selection algorithm represents a significant step toward more intelligent and efficient network path utilization, providing a foundation for future transport protocol innovations while maintaining compatibility with existing infrastructure.
-
---- back
-
-# Acknowledgments
-{:numbered="false"}
-
-The authors thank the Transport and Services Working Group (TSVWG) for their valuable feedback and guidance. Special acknowledgment goes to the contributors of {{RFC9599}} for establishing the ECN handling guidelines that inform this work. The authors also acknowledge the ongoing work on NQB PHB, careful congestion control resume, and multipath transport protocols that provide the foundation for this specification.
-
-Special thanks to Mark Townsley and Mark Bakke from Cisco for their insights on enterprise networking and SD-WAN deployment considerations. The authors are grateful to Mike Bishop from Akamai for his guidance on transport protocol optimization and congestion control mechanisms. Thanks also to Tommy Pauly from Apple for his valuable input on client-side implementation considerations and user experience aspects.
-
-Additional thanks will be added for reviewers and contributors who provide feedback on this document.
