@@ -11,10 +11,12 @@ This draft proposes a standardized algorithm for congestion-aware multipath tunn
 - Support for nested tunnels and multi-vendor environments
 - Focus on interoperability, performance, and security
 
-* [Editor's Copy](https://altanai.github.io/multipath-nested-tunnels/#go.draft-altanai-tsv-multipath_nested_tunnels.html)
-* [Datatracker Page](https://datatracker.ietf.org/doc/draft-altanai-tsv-multipath_nested_tunnels)
-* [Individual Draft](https://datatracker.ietf.org/doc/html/draft-altanai-tsv-multipath_nested_tunnels)
-* [Compare Editor's Copy to Individual Draft](https://altanai.github.io/multipath-nested-tunnels/#go.draft-altanai-tsv-multipath_nested_tunnels.diff)
+-------
+
+* [Editor's Copy](https://altanai.github.io/multipath-nested-tunnels/#go.draft-altanai-tsv-multipath-nested-tunnels.html)
+* [Datatracker Page](https://datatracker.ietf.org/doc/draft-altanai-tsv-multipath-nested-tunnels)
+* [Individual Draft](https://datatracker.ietf.org/doc/html/draft-altanai-tsv-multipath-nested-tunnels)
+* [Compare Editor's Copy to Individual Draft](https://altanai.github.io/multipath-nested-tunnels/#go.draft-altanai-tsv-multipath-nested-tunnels.diff)
 
 
 ## Contributing

@@ -31,7 +31,7 @@ author:
 -
   fullname: Altanai Bisht
   organization: Cisco Meraki
-  email: albisht@cisco.com
+  email:  @cisco.com
 
 normative:
   RFC2119:
