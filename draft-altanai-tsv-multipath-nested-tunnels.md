@@ -538,7 +538,7 @@ def policy_filter(traffic_profile, available_paths, constraints):
     """
     Filter paths based on hard security and compliance constraints
     """
-    eligible_paths = []
+    eligible_paths = ..
 
     for path in available_paths:
         # Check geographic constraints
@@ -568,10 +568,10 @@ Generate normalized scores (0.0-1.0) based on current network metrics and histor
 
 ```python
 def calculate_performance_score(traffic_profile, path):
-    """
-    Calculate performance compatibility score (0.0-1.0)
-    """
-    scores = {}
+  """
+  Calculate performance compatibility score (0.0-1.0)
+  """
+  scores = {}
 
     # Bandwidth adequacy
     bandwidth_ratio = path.available_bandwidth / traffic_profile.min_bandwidth
@@ -687,7 +687,7 @@ def select_optimal_path(traffic_profile, eligible_paths, weights):
     """
     Calculate composite scores and select optimal path
     """
-    scored_paths = []
+    scored_paths = ...
 
     for path in eligible_paths:
         perf_scores = calculate_performance_score(traffic_profile, path)
@@ -727,7 +727,7 @@ def select_optimal_path(traffic_profile, eligible_paths, weights):
     scored_paths.sort(key=lambda x: x['score'], reverse=True)
 
     if not scored_paths:
-        return None, 0.0, []
+        return None, 0.0, ..
 
     # Select best path and prepare fallbacks
     best_path = scored_paths[0]
@@ -883,11 +883,8 @@ algorithm_weights:
       - "availability < sla_requirement"
 ```
 
-[figure: algorithm flow diagram]: # "Algorithm flow diagram - shows the complete path selection algorithm decision flow"
 [diagram: prioritization across networks]: # "Prioritization across networks - shows how different networks may prioritize the same traffic differently"
 [diagram: masque quic multiplexing architecture]: # "MASQUE QUIC multiplexing architecture showing stream multiplexing over http/3"
-[figure 2: example 2 - voip e911 direct signaling]: # "Example 2 - VoIP E911 direct signaling with WebRTC P2P media path"
-[figure 3: example 3 - sip trunk calls over dedicated ipsec tunnel]: # "Example 3 - SIP trunk calls over dedicated IPsec tunnel"
 
 Prior work that standardized algorithms for networking include:
 
@@ -980,3 +977,19 @@ Provisioning domains: 0.5 ─────────┤     │  • Adequate b
 Criticality: 0.7 ──────────────────┤     │                             │
                                    │     └─────────────────────────────┘
 ```
+
+# Conventions and Definitions
+{::boilerplate bcp14-tagged}
+
+# Security Considerations
+TODO Security
+
+# IANA Considerations
+This document has no IANA actions.
+
+--- back
+
+# Acknowledgments
+{:numbered="false"}
+
+TODO acknowledge.
