@@ -3,7 +3,7 @@ title: "Congestion-Aware Multipath Tunnel Selection for Transport Services"
 abbrev: "Multipath Tunnel Selection"
 category: std
 
-docname: draft-altanai-tsv-multipath-nested-tunnels-latest
+docname: draft-altanai-tsv-multipath-nested-tunnels-00
 submissiontype: IETF
 number:
 date: 2025-10-14
@@ -347,7 +347,7 @@ By dynamically deciding the tunnel type for a stream or packet, we could avoid t
 * exhausting limited bandwidth available from VPN providers
 
 The proposal is to standardize an algorithm that computes multiple available options and decides whether, on-demand tunnels are created (via  MASQUE, IPSec, SSH, GRE other proprietary protocols such as AutoVPN), an existing set of tunnels be reused or any other route, based on the current network dynamics and vulnerability of the traffic.
-Standardized Path selection decision making making algorithm would ensure same treatment of the stream across heterogeneous networks.
+Standardized Path selection decision making algorithm would ensure same treatment of the stream across heterogeneous networks.
 
 ## Algorithm Input Parameters {#algorithm-inputs}
 
@@ -885,7 +885,7 @@ algorithm_weights:
 
 [figure: algorithm flow diagram]: # "Algorithm flow diagram - shows the complete path selection algorithm decision flow"
 [diagram: prioritization across networks]: # "Prioritization across networks - shows how different networks may prioritize the same traffic differently"
-[diagram: masque quic multiplexing architecture]: # "MASQUE QUIC multiplexing architecture showing stream multiplexing over HTTP/3"
+[diagram: masque quic multiplexing architecture]: # "MASQUE QUIC multiplexing architecture showing stream multiplexing over http/3"
 [figure 2: example 2 - voip e911 direct signaling]: # "Example 2 - VoIP E911 direct signaling with WebRTC P2P media path"
 [figure 3: example 3 - sip trunk calls over dedicated ipsec tunnel]: # "Example 3 - SIP trunk calls over dedicated IPsec tunnel"
 
