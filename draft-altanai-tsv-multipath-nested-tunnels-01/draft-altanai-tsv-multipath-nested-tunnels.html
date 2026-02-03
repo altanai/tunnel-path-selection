@@ -1093,7 +1093,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
       </h2>
 <p id="section-note.1-1">This note is to be removed before publishing as an RFC.<a href="#section-note.1-1" class="pilcrow">¶</a></p>
 <p id="section-note.1-2">
-        The latest revision of this draft can be found at <span><a href="https://altanai.github.io/multipath-nested-tunnels/draft-altanai-tsv-multipath_nested_tunnels.html">https://altanai.github.io/multipath-nested-tunnels/draft-altanai-tsv-multipath_nested_tunnels.html</a></span>.
+        The latest revision of this draft can be found at <span><a href="https://altanai.github.io/tunnel-path-selection/draft-altanai-tsv-multipath-nested-tunnels.html">https://altanai.github.io/tunnel-path-selection/draft-altanai-tsv-multipath-nested-tunnels.html</a></span>.
         Status information for this document may be found at <span><a href="https://datatracker.ietf.org/doc/draft-altanai-tsv-multipath-nested-tunnels/">https://datatracker.ietf.org/doc/draft-altanai-tsv-multipath-nested-tunnels/</a></span>.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
 <p id="section-note.1-3">
         Discussion of this document takes place on the
@@ -1101,7 +1101,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
         which is archived at <span><a href="https://mailarchive.ietf.org/arch/browse/tsvwg/">https://mailarchive.ietf.org/arch/browse/tsvwg/</a></span>.
         Subscribe at <span><a href="https://www.ietf.org/mailman/listinfo/tsvwg/">https://www.ietf.org/mailman/listinfo/tsvwg/</a></span>.<a href="#section-note.1-3" class="pilcrow">¶</a></p>
 <p id="section-note.1-4">Source for this draft and an issue tracker can be found at
-        <span><a href="https://github.com/altanai/multipath-nested-tunnels">https://github.com/altanai/multipath-nested-tunnels</a></span>.<a href="#section-note.1-4" class="pilcrow">¶</a></p>
+        <span><a href="https://github.com/altanai/tunnel-path-selection">https://github.com/altanai/tunnel-path-selection</a></span>.<a href="#section-note.1-4" class="pilcrow">¶</a></p>
 </section>
 <div id="status-of-memo">
 <section id="section-boilerplate.1">
@@ -1268,18 +1268,56 @@ svg :is([fill="white"], [fill^="#fff"]) {
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
-            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-references" class="internal xref">References</a></p>
-<ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
-                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-conventions-and-definitions" class="internal xref">Conventions and Definitions</a></p>
 </li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2">
-                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="auto internal xref">3.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-security-considerations" class="internal xref">Security Considerations</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1">
+                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="auto internal xref">4.1</a>.  <a href="#name-algorithm-input-integrity" class="internal xref">Algorithm Input Integrity</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.2">
+                <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="auto internal xref">4.2</a>.  <a href="#name-congestion-signal-security" class="internal xref">Congestion Signal Security</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3">
+                <p id="section-toc.1-1.4.2.3.1"><a href="#section-4.3" class="auto internal xref">4.3</a>.  <a href="#name-traffic-analysis-and-privac" class="internal xref">Traffic Analysis and Privacy</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.4">
+                <p id="section-toc.1-1.4.2.4.1"><a href="#section-4.4" class="auto internal xref">4.4</a>.  <a href="#name-multi-vendor-trust-boundari" class="internal xref">Multi-Vendor Trust Boundaries</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.5">
+                <p id="section-toc.1-1.4.2.5.1"><a href="#section-4.5" class="auto internal xref">4.5</a>.  <a href="#name-policy-enforcement-and-comp" class="internal xref">Policy Enforcement and Compliance</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.6">
+                <p id="section-toc.1-1.4.2.6.1"><a href="#section-4.6" class="auto internal xref">4.6</a>.  <a href="#name-denial-of-service-considera" class="internal xref">Denial of Service Considerations</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.7">
+                <p id="section-toc.1-1.4.2.7.1"><a href="#section-4.7" class="auto internal xref">4.7</a>.  <a href="#name-authentication-and-authoriz" class="internal xref">Authentication and Authorization</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.8">
+                <p id="section-toc.1-1.4.2.8.1"><a href="#section-4.8" class="auto internal xref">4.8</a>.  <a href="#name-zero-trust-alignment" class="internal xref">Zero Trust Alignment</a></p>
 </li>
             </ul>
 </li>
-          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
-            <p id="section-toc.1-1.4.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-authors-address" class="internal xref">Author's Address</a></p>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="auto internal xref">6</a>.  <a href="#name-references" class="internal xref">References</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.1">
+                <p id="section-toc.1-1.6.2.1.1"><a href="#section-6.1" class="auto internal xref">6.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2">
+                <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="auto internal xref">6.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-acknowledgments" class="internal xref">Acknowledgments</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-authors-address" class="internal xref">Author's Address</a></p>
 </li>
         </ul>
 </nav>
@@ -1386,8 +1424,7 @@ Multiple proprietary implementations increase the overall attack surface as Vend
           <h4 id="name-prioritization">
 <a href="#section-1.2.4" class="section-number selfRef">1.2.4. </a><a href="#name-prioritization" class="section-name selfRef">Prioritization</a>
           </h4>
-<p id="section-1.2.4-1">Mainstream techniques such as packet marking( DSCP, ECN so on ) and queuing of other non-critical traffic (Fq-CODEL, CAKE AQM) to optimize for realtime streams is essentially prioritization in practice. However, VPN providers, CSPs and/or ISP may employ polar-opposite algorithms to shape traffic based on their interest which could lead to  an overall non-synchronized approach, where a stream is prioritized in some networks and deprioritized in other networks.
-[Diagram: Prioritization across networks - shows how different networks may prioritize the same traffic differently]<a href="#section-1.2.4-1" class="pilcrow">¶</a></p>
+<p id="section-1.2.4-1">Mainstream techniques such as packet marking( DSCP, ECN so on ) and queuing of other non-critical traffic (Fq-CODEL, CAKE AQM) to optimize for realtime streams is essentially prioritization in practice. However, VPN providers, CSPs and/or ISP may employ polar-opposite algorithms to shape traffic based on their interest which could lead to  an overall non-synchronized approach, where a stream is prioritized in some networks and deprioritized in other networks.<a href="#section-1.2.4-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1441,8 +1478,7 @@ Dynamic path selection can even rely on explicitly identifying Provisioning Doma
           <h4 id="name-5-masque-quic-multiplexing-">
 <a href="#section-1.3.5" class="section-number selfRef">1.3.5. </a><a href="#name-5-masque-quic-multiplexing-" class="section-name selfRef">5. MASQUE (QUIC multiplexing) for all Web trafic</a>
           </h4>
-<p id="section-1.3.5-1">[Diagram: MASQUE QUIC multiplexing architecture showing stream multiplexing over HTTP/3]<a href="#section-1.3.5-1" class="pilcrow">¶</a></p>
-<p id="section-1.3.5-2">MASQUE provides the advantage of being able to handle both reliable and unreliable data streams efficiently through QUIC multiplexing, offering flexibility in transport protocol selection. However, this approach has the limitation of not being well-suited for non-web-based traffic, potentially requiring additional adaptations or alternative solutions for enterprise applications that do not follow web protocols.<a href="#section-1.3.5-2" class="pilcrow">¶</a></p>
+<p id="section-1.3.5-1">MASQUE provides the advantage of being able to handle both reliable and unreliable data streams efficiently through QUIC multiplexing, offering flexibility in transport protocol selection. However, this approach has the limitation of not being well-suited for non-web-based traffic, potentially requiring additional adaptations or alternative solutions for enterprise applications that do not follow web protocols.<a href="#section-1.3.5-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="whitelist-for-ip-address-or-tuples-to-prioritize">
@@ -1496,7 +1532,7 @@ Dynamic path selection can even rely on explicitly identifying Provisioning Doma
 * nested tunneling and double congestion control
 * exhausting limited bandwidth available from VPN providers<a href="#section-2-2" class="pilcrow">¶</a></p>
 <p id="section-2-3">The proposal is to standardize an algorithm that computes multiple available options and decides whether, on-demand tunnels are created (via  MASQUE, IPSec, SSH, GRE other proprietary protocols such as AutoVPN), an existing set of tunnels be reused or any other route, based on the current network dynamics and vulnerability of the traffic.
-Standardized Path selection decision making making algorithm would ensure same treatment of the stream across heterogeneous networks.<a href="#section-2-3" class="pilcrow">¶</a></p>
+Standardized Path selection decision making algorithm would ensure same treatment of the stream across heterogeneous networks.<a href="#section-2-3" class="pilcrow">¶</a></p>
 <div id="algorithm-inputs">
 <section id="section-2.1">
         <h3 id="name-algorithm-input-parameters">
@@ -1665,7 +1701,7 @@ Standardized Path selection decision making making algorithm would ensure same t
               <p id="section-2.1.4-1.1.1"><strong>Failure Tolerance Specification</strong>: Configurable parameters defining acceptable service degradation:<a href="#section-2.1.4-1.1.1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-2.1.4-1.1.2.1">
-                  <p id="section-2.1.4-1.1.2.1.1">Maximum acceptable RTT increase (percentage or absolute value)<a href="#section-2.1.4-1.1.2.1.1" class="pilcrow">¶</a></p>
+                  <p id="section-2.1.4-1.1.2.1.1">Maximum acceptable RTT increase which is a percentage or absolute value<a href="#section-2.1.4-1.1.2.1.1" class="pilcrow">¶</a></p>
 </li>
                 <li class="normal" id="section-2.1.4-1.1.2.2">
                   <p id="section-2.1.4-1.1.2.2.1">Minimum acceptable bandwidth threshold<a href="#section-2.1.4-1.1.2.2.1" class="pilcrow">¶</a></p>
@@ -1674,7 +1710,7 @@ Standardized Path selection decision making making algorithm would ensure same t
                   <p id="section-2.1.4-1.1.2.3.1">Maximum tolerable packet loss rate<a href="#section-2.1.4-1.1.2.3.1" class="pilcrow">¶</a></p>
 </li>
                 <li class="normal" id="section-2.1.4-1.1.2.4">
-                  <p id="section-2.1.4-1.1.2.4.1">Service availability requirements (e.g., 99.9% uptime)<a href="#section-2.1.4-1.1.2.4.1" class="pilcrow">¶</a></p>
+                  <p id="section-2.1.4-1.1.2.4.1">Service availability requirements e.g., 99.9% uptime<a href="#section-2.1.4-1.1.2.4.1" class="pilcrow">¶</a></p>
 </li>
                 <li class="normal" id="section-2.1.4-1.1.2.5">
                   <p id="section-2.1.4-1.1.2.5.1">Graceful degradation preferences vs hard failover<a href="#section-2.1.4-1.1.2.5.1" class="pilcrow">¶</a></p>
@@ -1873,7 +1909,7 @@ def policy_filter(traffic_profile, available_paths, constraints):
     """
     Filter paths based on hard security and compliance constraints
     """
-    eligible_paths = []<a href="#section-2.2.1.1-2" class="pilcrow">¶</a></p>
+    eligible_paths = ..<a href="#section-2.2.1.1-2" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-2.2.1.1-3">
 <pre>
 for path in available_paths:
@@ -1909,10 +1945,10 @@ return eligible_paths ```
 Generate normalized scores (0.0-1.0) based on current network metrics and historical performance data.<a href="#section-2.2.1.2-1" class="pilcrow">¶</a></p>
 <p id="section-2.2.1.2-2">```python
 def calculate_performance_score(traffic_profile, path):
-    """
-    Calculate performance compatibility score (0.0-1.0)
-    """
-    scores = {}<a href="#section-2.2.1.2-2" class="pilcrow">¶</a></p>
+  """
+  Calculate performance compatibility score (0.0-1.0)
+  """
+  scores = {}<a href="#section-2.2.1.2-2" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-2.2.1.2-3">
 <pre>
 # Bandwidth adequacy
@@ -2052,7 +2088,7 @@ def select_optimal_path(traffic_profile, eligible_paths, weights):
     """
     Calculate composite scores and select optimal path
     """
-    scored_paths = []<a href="#section-2.2.1.6-2" class="pilcrow">¶</a></p>
+    scored_paths = ...<a href="#section-2.2.1.6-2" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-2.2.1.6-3">
 <pre>
 for path in eligible_paths:
@@ -2093,7 +2129,7 @@ for path in eligible_paths:
 scored_paths.sort(key=lambda x: x['score'], reverse=True)
 
 if not scored_paths:
-    return None, 0.0, []
+    return None, 0.0, ..
 
 # Select best path and prepare fallbacks
 best_path = scored_paths[0]
@@ -2367,20 +2403,144 @@ Criticality: 0.7 ──────────────────┤     �
 </div>
 </section>
 </div>
-<div id="sec-combined-references">
+<div id="conventions-and-definitions">
 <section id="section-3">
+      <h2 id="name-conventions-and-definitions">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-conventions-and-definitions" class="section-name selfRef">Conventions and Definitions</a>
+      </h2>
+<p id="section-3-1">The key words "<span class="bcp14">MUST</span>", "<span class="bcp14">MUST NOT</span>", "<span class="bcp14">REQUIRED</span>", "<span class="bcp14">SHALL</span>", "<span class="bcp14">SHALL NOT</span>", "<span class="bcp14">SHOULD</span>", "<span class="bcp14">SHOULD NOT</span>", "<span class="bcp14">RECOMMENDED</span>", "<span class="bcp14">NOT RECOMMENDED</span>",
+"<span class="bcp14">MAY</span>", and "<span class="bcp14">OPTIONAL</span>" in this document are to be interpreted as
+described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they
+appear in all capitals, as shown here.<a href="#section-3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="security-considerations">
+<section id="section-4">
+      <h2 id="name-security-considerations">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+      </h2>
+<p id="section-4-1">The congestion-aware multipath tunnel selection algorithm introduces several security considerations that implementers and operators <span class="bcp14">MUST</span> address to ensure secure operation in production environments.<a href="#section-4-1" class="pilcrow">¶</a></p>
+<div id="algorithm-input-integrity">
+<section id="section-4.1">
+        <h3 id="name-algorithm-input-integrity">
+<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-algorithm-input-integrity" class="section-name selfRef">Algorithm Input Integrity</a>
+        </h3>
+<p id="section-4.1-1">The path selection algorithm relies on multiple input parameters including network metrics, historical performance data, and policy constraints. Attackers who can manipulate these inputs may influence path selection decisions to their advantage:<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+<p id="section-4.1-2"><strong>Metric Manipulation</strong>: An attacker with access to network telemetry systems could inject false latency, bandwidth, or loss measurements to force traffic onto paths under their control or to degrade service quality. Implementations <span class="bcp14">SHOULD</span> authenticate and integrity-protect all metric collection channels. Where possible, metrics <span class="bcp14">SHOULD</span> be validated through independent measurement sources.<a href="#section-4.1-2" class="pilcrow">¶</a></p>
+<p id="section-4.1-3"><strong>Historical Data Poisoning</strong>: Long-term manipulation of historical performance databases could gradually shift path selection preferences. Implementations <span class="bcp14">SHOULD</span> implement anomaly detection for historical data and <span class="bcp14">SHOULD</span> maintain audit logs of all data modifications.<a href="#section-4.1-3" class="pilcrow">¶</a></p>
+<p id="section-4.1-4"><strong>Policy Injection</strong>: Unauthorized modification of policy constraints could bypass geographic routing restrictions or compliance requirements. Policy databases <span class="bcp14">MUST</span> implement strong access controls and <span class="bcp14">SHOULD</span> require multi-party authorization for policy changes affecting security-sensitive traffic classifications.<a href="#section-4.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="congestion-signal-security">
+<section id="section-4.2">
+        <h3 id="name-congestion-signal-security">
+<a href="#section-4.2" class="section-number selfRef">4.2. </a><a href="#name-congestion-signal-security" class="section-name selfRef">Congestion Signal Security</a>
+        </h3>
+<p id="section-4.2-1">The algorithm's reliance on ECN markings and congestion signals creates potential attack vectors:<a href="#section-4.2-1" class="pilcrow">¶</a></p>
+<p id="section-4.2-2"><strong>ECN Spoofing</strong>: Malicious intermediate nodes could inject false ECN Congestion Experienced (CE) markings to influence path selection away from legitimate paths. While <span>[<a href="#RFC6040" class="cite xref">RFC6040</a>]</span> provides guidance on ECN propagation in tunnels, implementations <span class="bcp14">SHOULD</span> implement mechanisms to detect anomalous ECN marking patterns that may indicate spoofing attempts.<a href="#section-4.2-2" class="pilcrow">¶</a></p>
+<p id="section-4.2-3"><strong>Congestion Amplification</strong>: An attacker could artificially induce congestion on specific paths to force traffic redistribution, potentially overwhelming alternative paths. The algorithm <span class="bcp14">SHOULD</span> implement rate limiting on path switching decisions and <span class="bcp14">SHOULD</span> detect patterns consistent with deliberate congestion induction.<a href="#section-4.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="traffic-analysis-and-privacy">
+<section id="section-4.3">
+        <h3 id="name-traffic-analysis-and-privac">
+<a href="#section-4.3" class="section-number selfRef">4.3. </a><a href="#name-traffic-analysis-and-privac" class="section-name selfRef">Traffic Analysis and Privacy</a>
+        </h3>
+<p id="section-4.3-1">Path selection decisions may inadvertently reveal sensitive information:<a href="#section-4.3-1" class="pilcrow">¶</a></p>
+<p id="section-4.3-2"><strong>Selection Pattern Analysis</strong>: Consistent path selection patterns may reveal information about traffic types, application usage, or organizational priorities to network observers. Implementations <span class="bcp14">SHOULD</span> consider adding controlled randomization to path selection decisions for non-critical traffic to reduce fingerprinting opportunities.<a href="#section-4.3-2" class="pilcrow">¶</a></p>
+<p id="section-4.3-3"><strong>Timing Correlation</strong>: The timing of path switches may correlate with specific application behaviors or user activities. Implementations <span class="bcp14">SHOULD</span> avoid immediate path switching in response to transient conditions and <span class="bcp14">SHOULD</span> implement hysteresis mechanisms that obscure the relationship between traffic characteristics and path changes.<a href="#section-4.3-3" class="pilcrow">¶</a></p>
+<p id="section-4.3-4"><strong>Metadata Exposure</strong>: The algorithm's input parameters, if transmitted across network boundaries, could expose sensitive operational information. All algorithm signaling between distributed components <span class="bcp14">MUST</span> be encrypted and authenticated.<a href="#section-4.3-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="multi-vendor-trust-boundaries">
+<section id="section-4.4">
+        <h3 id="name-multi-vendor-trust-boundari">
+<a href="#section-4.4" class="section-number selfRef">4.4. </a><a href="#name-multi-vendor-trust-boundari" class="section-name selfRef">Multi-Vendor Trust Boundaries</a>
+        </h3>
+<p id="section-4.4-1">In heterogeneous deployments spanning multiple vendors, trust relationships require careful consideration:<a href="#section-4.4-1" class="pilcrow">¶</a></p>
+<p id="section-4.4-2"><strong>Cross-Vendor Metric Sharing</strong>: When path selection decisions depend on metrics from different vendors' equipment, implementations <span class="bcp14">MUST NOT</span> blindly trust metrics from external sources. Cross-vendor metric exchanges <span class="bcp14">SHOULD</span> be authenticated and <span class="bcp14">SHOULD</span> be validated against locally observable network behavior.<a href="#section-4.4-2" class="pilcrow">¶</a></p>
+<p id="section-4.4-3"><strong>Algorithm Coordination Attacks</strong>: In federated deployments where multiple instances of the algorithm coordinate, a compromised or malicious instance could provide false information to influence global path selection. Implementations <span class="bcp14">SHOULD</span> implement reputation systems and anomaly detection for federated algorithm participants.<a href="#section-4.4-3" class="pilcrow">¶</a></p>
+<p id="section-4.4-4"><strong>Vendor-Specific Vulnerabilities</strong>: Different vendor implementations may have varying security postures. The algorithm <span class="bcp14">SHOULD</span> support configurable trust levels for different vendor domains and <span class="bcp14">SHOULD</span> allow operators to constrain path selection based on security assessments of traversed infrastructure.<a href="#section-4.4-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="policy-enforcement-and-compliance">
+<section id="section-4.5">
+        <h3 id="name-policy-enforcement-and-comp">
+<a href="#section-4.5" class="section-number selfRef">4.5. </a><a href="#name-policy-enforcement-and-comp" class="section-name selfRef">Policy Enforcement and Compliance</a>
+        </h3>
+<p id="section-4.5-1">The algorithm must ensure that security and compliance policies are consistently enforced:<a href="#section-4.5-1" class="pilcrow">¶</a></p>
+<p id="section-4.5-2"><strong>Policy Bypass Prevention</strong>: The algorithm <span class="bcp14">MUST</span> ensure that performance optimization cannot override mandatory security policies. Geographic routing restrictions, encryption requirements, and compliance constraints <span class="bcp14">MUST</span> be treated as hard constraints that cannot be relaxed by the optimization process.<a href="#section-4.5-2" class="pilcrow">¶</a></p>
+<p id="section-4.5-3"><strong>Audit and Accountability</strong>: All path selection decisions affecting security-sensitive traffic <span class="bcp14">MUST</span> be logged with sufficient detail to support forensic analysis. Logs <span class="bcp14">SHOULD</span> include the input parameters, evaluated alternatives, and rationale for the selected path.<a href="#section-4.5-3" class="pilcrow">¶</a></p>
+<p id="section-4.5-4"><strong>Regulatory Compliance</strong>: Operators deploying this algorithm in regulated environments <span class="bcp14">MUST</span> ensure that path selection decisions comply with applicable data protection regulations. The algorithm <span class="bcp14">SHOULD</span> support configurable compliance profiles for different regulatory frameworks (e.g., GDPR, HIPAA, SOX).<a href="#section-4.5-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="denial-of-service-considerations">
+<section id="section-4.6">
+        <h3 id="name-denial-of-service-considera">
+<a href="#section-4.6" class="section-number selfRef">4.6. </a><a href="#name-denial-of-service-considera" class="section-name selfRef">Denial of Service Considerations</a>
+        </h3>
+<p id="section-4.6-1">The algorithm may be targeted by denial of service attacks:<a href="#section-4.6-1" class="pilcrow">¶</a></p>
+<p id="section-4.6-2"><strong>Path Exhaustion</strong>: An attacker could attempt to make all available paths appear unsuitable, forcing traffic to fail or use suboptimal routing. Implementations <span class="bcp14">MUST</span> maintain fallback paths and <span class="bcp14">SHOULD</span> implement graceful degradation rather than complete service denial when optimal paths are unavailable.<a href="#section-4.6-2" class="pilcrow">¶</a></p>
+<p id="section-4.6-3"><strong>Algorithmic Complexity Attacks</strong>: Carefully crafted inputs could potentially cause excessive computation in the path selection algorithm. Implementations <span class="bcp14">SHOULD</span> bound computational complexity and <span class="bcp14">SHOULD</span> implement timeouts for path selection decisions.<a href="#section-4.6-3" class="pilcrow">¶</a></p>
+<p id="section-4.6-4"><strong>Oscillation Induction</strong>: An attacker could manipulate network conditions to induce rapid path switching, potentially destabilizing network operations. The algorithm <span class="bcp14">MUST</span> implement dampening mechanisms to prevent rapid oscillation between paths.<a href="#section-4.6-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="authentication-and-authorization">
+<section id="section-4.7">
+        <h3 id="name-authentication-and-authoriz">
+<a href="#section-4.7" class="section-number selfRef">4.7. </a><a href="#name-authentication-and-authoriz" class="section-name selfRef">Authentication and Authorization</a>
+        </h3>
+<p id="section-4.7-1">Access to algorithm configuration and control interfaces requires protection:<a href="#section-4.7-1" class="pilcrow">¶</a></p>
+<p id="section-4.7-2"><strong>Configuration Access Control</strong>: Modification of algorithm weights, thresholds, and policies <span class="bcp14">MUST</span> require authentication and authorization. Role-based access control <span class="bcp14">SHOULD</span> be implemented to limit configuration capabilities based on operator responsibilities.<a href="#section-4.7-2" class="pilcrow">¶</a></p>
+<p id="section-4.7-3"><strong>Runtime Control Security</strong>: Interfaces that allow runtime modification of path selection behavior <span class="bcp14">MUST</span> be protected against unauthorized access. All control plane communications <span class="bcp14">SHOULD</span> use mutual TLS authentication.<a href="#section-4.7-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="zero-trust-alignment">
+<section id="section-4.8">
+        <h3 id="name-zero-trust-alignment">
+<a href="#section-4.8" class="section-number selfRef">4.8. </a><a href="#name-zero-trust-alignment" class="section-name selfRef">Zero Trust Alignment</a>
+        </h3>
+<p id="section-4.8-1">As discussed in <a href="#zero-trust-considerations" class="auto internal xref">Section 2.4.1</a>, the algorithm <span class="bcp14">SHOULD NOT</span> rely on network-layer trust indicators that can be easily spoofed. Instead, implementations <span class="bcp14">SHOULD</span>:<a href="#section-4.8-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-4.8-2.1">
+            <p id="section-4.8-2.1.1">Verify traffic characteristics through behavioral analysis rather than declared markings<a href="#section-4.8-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-4.8-2.2">
+            <p id="section-4.8-2.2.1">Implement continuous validation of path security properties<a href="#section-4.8-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-4.8-2.3">
+            <p id="section-4.8-2.3.1">Assume that any network segment may be compromised and select paths accordingly<a href="#section-4.8-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-4.8-2.4">
+            <p id="section-4.8-2.4.1">Support integration with zero trust network access (ZTNA) frameworks for identity-aware path selection<a href="#section-4.8-2.4.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+</section>
+</div>
+<div id="iana-considerations">
+<section id="section-5">
+      <h2 id="name-iana-considerations">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+      </h2>
+<p id="section-5-1">This document has no IANA actions.<a href="#section-5-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="sec-combined-references">
+<section id="section-6">
       <h2 id="name-references">
-<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-references" class="section-name selfRef">References</a>
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-references" class="section-name selfRef">References</a>
       </h2>
 <div id="sec-normative-references">
-<section id="section-3.1">
+<section id="section-6.1">
         <h3 id="name-normative-references">
-<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+<a href="#section-6.1" class="section-number selfRef">6.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
         </h3>
 <dl class="references">
 <dt id="RFC2119">[RFC2119]</dt>
         <dd>
-<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <time datetime="1997-03" class="refDate">March 1997</time>. </dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC3168">[RFC3168]</dt>
         <dd>
@@ -2396,7 +2556,7 @@ Criticality: 0.7 ──────────────────┤     �
 <dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
         <dd>
-<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <time datetime="2017-05" class="refDate">May 2017</time>. </dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8305">[RFC8305]</dt>
         <dd>
@@ -2418,9 +2578,9 @@ Criticality: 0.7 ──────────────────┤     �
 </section>
 </div>
 <div id="sec-informative-references">
-<section id="section-3.2">
+<section id="section-6.2">
         <h3 id="name-informative-references">
-<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+<a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
         </h3>
 <dl class="references">
 <dt id="CAREFUL-RESUME">[CAREFUL-RESUME]</dt>
@@ -2488,8 +2648,16 @@ Criticality: 0.7 ──────────────────┤     �
 </div>
 </section>
 </div>
-<div id="authors-addresses">
+<div id="acknowledgments">
 <section id="appendix-A">
+      <h2 id="name-acknowledgments">
+<a href="#name-acknowledgments" class="section-name selfRef">Acknowledgments</a>
+      </h2>
+<p id="appendix-A-1">TODO acknowledge.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="authors-addresses">
+<section id="appendix-B">
       <h2 id="name-authors-address">
 <a href="#name-authors-address" class="section-name selfRef">Author's Address</a>
       </h2>
