@@ -3,7 +3,7 @@ title: "Congestion-Aware Multipath Tunnel Selection for Transport Services"
 abbrev: "Multipath Tunnel Selection"
 category: std
 
-docname: draft-altanai-tsv-multipath-nested-tunnels-00
+docname: draft-altanai-tsv-multipath-nested-tunnels-latest
 submissiontype: IETF
 number:
 date: 2025-10-14
@@ -24,8 +24,8 @@ venue:
   type: "WG"
   mail: "tsvwg@ietf.org"
   arch: "https://mailarchive.ietf.org/arch/browse/tsvwg/"
-  github: "altanai/multipath-nested-tunnels"
-  latest: "https://altanai.github.io/multipath-nested-tunnels/draft-altanai-tsv-multipath_nested_tunnels.html"
+  github: "altanai/tunnel-path-selection"
+  latest: "https://altanai.github.io/tunnel-path-selection/draft-altanai-tsv-multipath-nested-tunnels.html"
 
 author:
 -
@@ -277,7 +277,6 @@ This integrated approach to congestion management represents a significant advan
 ### Prioritization
 
 Mainstream techniques such as packet marking( DSCP, ECN so on ) and queuing of other non-critical traffic (Fq-CODEL, CAKE AQM) to optimize for realtime streams is essentially prioritization in practice. However, VPN providers, CSPs and/or ISP may employ polar-opposite algorithms to shape traffic based on their interest which could lead to  an overall non-synchronized approach, where a stream is prioritized in some networks and deprioritized in other networks.
-[diagram: prioritization across networks]
 
 
 ## Limited scope of past proposals for prioritiztion or path selection
@@ -310,8 +309,6 @@ The aplication knows its type and can directly feed the information to the algor
 Dynamic path selection can even rely on explicitly identifying Provisioning Domain Names through a Router Advertisement (RA) option. Discovering Provisioning Domain Names and Data, its architecture involving the authenticatio and trust model has been decribed in prior work {{?RFC7556}} and {{?RFC8801}}.
 
 ### 5. MASQUE (QUIC multiplexing) for all Web trafic
-
-[diagram: masque quic multiplexing architecture]
 
 MASQUE provides the advantage of being able to handle both reliable and unreliable data streams efficiently through QUIC multiplexing, offering flexibility in transport protocol selection. However, this approach has the limitation of not being well-suited for non-web-based traffic, potentially requiring additional adaptations or alternative solutions for enterprise applications that do not follow web protocols.
 
@@ -883,9 +880,6 @@ algorithm_weights:
       - "availability < sla_requirement"
 ```
 
-[diagram: prioritization across networks]: # "Prioritization across networks - shows how different networks may prioritize the same traffic differently"
-[diagram: masque quic multiplexing architecture]: # "MASQUE QUIC multiplexing architecture showing stream multiplexing over http/3"
-
 Prior work that standardized algorithms for networking include:
 
 - Happy Eyeballs {{RFC6555}} and Happy Eyeballs Version 2 {{RFC8305}} algorithms for dual-stack hosts
@@ -982,7 +976,83 @@ Criticality: 0.7 ──────────────────┤     �
 {::boilerplate bcp14-tagged}
 
 # Security Considerations
-TODO Security
+
+The congestion-aware multipath tunnel selection algorithm introduces several security considerations that implementers and operators MUST address to ensure secure operation in production environments.
+
+## Algorithm Input Integrity
+
+The path selection algorithm relies on multiple input parameters including network metrics, historical performance data, and policy constraints. Attackers who can manipulate these inputs may influence path selection decisions to their advantage:
+
+**Metric Manipulation**: An attacker with access to network telemetry systems could inject false latency, bandwidth, or loss measurements to force traffic onto paths under their control or to degrade service quality. Implementations SHOULD authenticate and integrity-protect all metric collection channels. Where possible, metrics SHOULD be validated through independent measurement sources.
+
+**Historical Data Poisoning**: Long-term manipulation of historical performance databases could gradually shift path selection preferences. Implementations SHOULD implement anomaly detection for historical data and SHOULD maintain audit logs of all data modifications.
+
+**Policy Injection**: Unauthorized modification of policy constraints could bypass geographic routing restrictions or compliance requirements. Policy databases MUST implement strong access controls and SHOULD require multi-party authorization for policy changes affecting security-sensitive traffic classifications.
+
+## Congestion Signal Security
+
+The algorithm's reliance on ECN markings and congestion signals creates potential attack vectors:
+
+**ECN Spoofing**: Malicious intermediate nodes could inject false ECN Congestion Experienced (CE) markings to influence path selection away from legitimate paths. While {{RFC6040}} provides guidance on ECN propagation in tunnels, implementations SHOULD implement mechanisms to detect anomalous ECN marking patterns that may indicate spoofing attempts.
+
+**Congestion Amplification**: An attacker could artificially induce congestion on specific paths to force traffic redistribution, potentially overwhelming alternative paths. The algorithm SHOULD implement rate limiting on path switching decisions and SHOULD detect patterns consistent with deliberate congestion induction.
+
+## Traffic Analysis and Privacy
+
+Path selection decisions may inadvertently reveal sensitive information:
+
+**Selection Pattern Analysis**: Consistent path selection patterns may reveal information about traffic types, application usage, or organizational priorities to network observers. Implementations SHOULD consider adding controlled randomization to path selection decisions for non-critical traffic to reduce fingerprinting opportunities.
+
+**Timing Correlation**: The timing of path switches may correlate with specific application behaviors or user activities. Implementations SHOULD avoid immediate path switching in response to transient conditions and SHOULD implement hysteresis mechanisms that obscure the relationship between traffic characteristics and path changes.
+
+**Metadata Exposure**: The algorithm's input parameters, if transmitted across network boundaries, could expose sensitive operational information. All algorithm signaling between distributed components MUST be encrypted and authenticated.
+
+## Multi-Vendor Trust Boundaries
+
+In heterogeneous deployments spanning multiple vendors, trust relationships require careful consideration:
+
+**Cross-Vendor Metric Sharing**: When path selection decisions depend on metrics from different vendors' equipment, implementations MUST NOT blindly trust metrics from external sources. Cross-vendor metric exchanges SHOULD be authenticated and SHOULD be validated against locally observable network behavior.
+
+**Algorithm Coordination Attacks**: In federated deployments where multiple instances of the algorithm coordinate, a compromised or malicious instance could provide false information to influence global path selection. Implementations SHOULD implement reputation systems and anomaly detection for federated algorithm participants.
+
+**Vendor-Specific Vulnerabilities**: Different vendor implementations may have varying security postures. The algorithm SHOULD support configurable trust levels for different vendor domains and SHOULD allow operators to constrain path selection based on security assessments of traversed infrastructure.
+
+## Policy Enforcement and Compliance
+
+The algorithm must ensure that security and compliance policies are consistently enforced:
+
+**Policy Bypass Prevention**: The algorithm MUST ensure that performance optimization cannot override mandatory security policies. Geographic routing restrictions, encryption requirements, and compliance constraints MUST be treated as hard constraints that cannot be relaxed by the optimization process.
+
+**Audit and Accountability**: All path selection decisions affecting security-sensitive traffic MUST be logged with sufficient detail to support forensic analysis. Logs SHOULD include the input parameters, evaluated alternatives, and rationale for the selected path.
+
+**Regulatory Compliance**: Operators deploying this algorithm in regulated environments MUST ensure that path selection decisions comply with applicable data protection regulations. The algorithm SHOULD support configurable compliance profiles for different regulatory frameworks (e.g., GDPR, HIPAA, SOX).
+
+## Denial of Service Considerations
+
+The algorithm may be targeted by denial of service attacks:
+
+**Path Exhaustion**: An attacker could attempt to make all available paths appear unsuitable, forcing traffic to fail or use suboptimal routing. Implementations MUST maintain fallback paths and SHOULD implement graceful degradation rather than complete service denial when optimal paths are unavailable.
+
+**Algorithmic Complexity Attacks**: Carefully crafted inputs could potentially cause excessive computation in the path selection algorithm. Implementations SHOULD bound computational complexity and SHOULD implement timeouts for path selection decisions.
+
+**Oscillation Induction**: An attacker could manipulate network conditions to induce rapid path switching, potentially destabilizing network operations. The algorithm MUST implement dampening mechanisms to prevent rapid oscillation between paths.
+
+## Authentication and Authorization
+
+Access to algorithm configuration and control interfaces requires protection:
+
+**Configuration Access Control**: Modification of algorithm weights, thresholds, and policies MUST require authentication and authorization. Role-based access control SHOULD be implemented to limit configuration capabilities based on operator responsibilities.
+
+**Runtime Control Security**: Interfaces that allow runtime modification of path selection behavior MUST be protected against unauthorized access. All control plane communications SHOULD use mutual TLS authentication.
+
+## Zero Trust Alignment
+
+As discussed in {{zero-trust-considerations}}, the algorithm SHOULD NOT rely on network-layer trust indicators that can be easily spoofed. Instead, implementations SHOULD:
+
+- Verify traffic characteristics through behavioral analysis rather than declared markings
+- Implement continuous validation of path security properties
+- Assume that any network segment may be compromised and select paths accordingly
+- Support integration with zero trust network access (ZTNA) frameworks for identity-aware path selection
 
 # IANA Considerations
 This document has no IANA actions.
