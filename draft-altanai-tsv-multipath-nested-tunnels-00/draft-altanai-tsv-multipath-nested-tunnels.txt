@@ -32,8 +32,8 @@ About This Document
    This note is to be removed before publishing as an RFC.
 
    The latest revision of this draft can be found at
-   https://altanai.github.io/multipath-nested-tunnels/draft-altanai-tsv-
-   multipath_nested_tunnels.html.  Status information for this document
+   https://altanai.github.io/tunnel-path-selection/draft-altanai-tsv-
+   multipath-nested-tunnels.html.  Status information for this document
    may be found at https://datatracker.ietf.org/doc/draft-altanai-tsv-
    multipath-nested-tunnels/.
 
@@ -43,7 +43,7 @@ About This Document
    https://www.ietf.org/mailman/listinfo/tsvwg/.
 
    Source for this draft and an issue tracker can be found at
-   https://github.com/altanai/multipath-nested-tunnels.
+   https://github.com/altanai/tunnel-path-selection.
 
 Status of This Memo
 
@@ -119,9 +119,21 @@ Table of Contents
        2.4.1.  Zero Trust Security Considerations
      2.5.  Algorithm's Requirements
      2.6.  Implementation Strategies
-   3.  References
-     3.1.  Normative References
-     3.2.  Informative References
+   3.  Conventions and Definitions
+   4.  Security Considerations
+     4.1.  Algorithm Input Integrity
+     4.2.  Congestion Signal Security
+     4.3.  Traffic Analysis and Privacy
+     4.4.  Multi-Vendor Trust Boundaries
+     4.5.  Policy Enforcement and Compliance
+     4.6.  Denial of Service Considerations
+     4.7.  Authentication and Authorization
+     4.8.  Zero Trust Alignment
+   5.  IANA Considerations
+   6.  References
+     6.1.  Normative References
+     6.2.  Informative References
+   Acknowledgments
    Author's Address
 
 1.  Introduction
@@ -389,8 +401,6 @@ Table of Contents
    opposite algorithms to shape traffic based on their interest which
    could lead to an overall non-synchronized approach, where a stream is
    prioritized in some networks and deprioritized in other networks.
-   [Diagram: Prioritization across networks - shows how different
-   networks may prioritize the same traffic differently]
 
 1.3.  Limited scope of past proposals for prioritiztion or path
       selection
@@ -484,9 +494,6 @@ Table of Contents
 
 1.3.5.  5.  MASQUE (QUIC multiplexing) for all Web trafic
 
-   [Diagram: MASQUE QUIC multiplexing architecture showing stream
-   multiplexing over HTTP/3]
-
    MASQUE provides the advantage of being able to handle both reliable
    and unreliable data streams efficiently through QUIC multiplexing,
    offering flexibility in transport protocol selection.  However, this
@@ -571,9 +578,8 @@ Table of Contents
    (via MASQUE, IPSec, SSH, GRE other proprietary protocols such as
    AutoVPN), an existing set of tunnels be reused or any other route,
    based on the current network dynamics and vulnerability of the
-   traffic.  Standardized Path selection decision making making
-   algorithm would ensure same treatment of the stream across
-   heterogeneous networks.
+   traffic.  Standardized Path selection decision making algorithm would
+   ensure same treatment of the stream across heterogeneous networks.
 
 2.1.  Algorithm Input Parameters
 
@@ -715,13 +721,14 @@ Table of Contents
    1.  *Failure Tolerance Specification*: Configurable parameters
        defining acceptable service degradation:
 
-       *  Maximum acceptable RTT increase (percentage or absolute value)
+       *  Maximum acceptable RTT increase which is a percentage or
+          absolute value
 
        *  Minimum acceptable bandwidth threshold
 
        *  Maximum tolerable packet loss rate
 
-       *  Service availability requirements (e.g., 99.9% uptime)
+       *  Service availability requirements e.g., 99.9% uptime
 
        *  Graceful degradation preferences vs hard failover
 
@@ -835,7 +842,7 @@ Table of Contents
 
    ```python def policy_filter(traffic_profile, available_paths,
    constraints): """ Filter paths based on hard security and compliance
-   constraints """ eligible_paths = []
+   constraints """ eligible_paths = ..
 
 for path in available_paths:
     # Check geographic constraints
@@ -978,7 +985,7 @@ return (carbon_score * 0.4 + renewable_score * 0.3 +
 
    ```python def select_optimal_path(traffic_profile, eligible_paths,
    weights): """ Calculate composite scores and select optimal path """
-   scored_paths = []
+   scored_paths = ...
 
 for path in eligible_paths:
     perf_scores = calculate_performance_score(traffic_profile, path)
@@ -1018,7 +1025,7 @@ for path in eligible_paths:
 scored_paths.sort(key=lambda x: x['score'], reverse=True)
 
 if not scored_paths:
-    return None, 0.0, []
+    return None, 0.0, ..
 
 # Select best path and prepare fallbacks
 best_path = scored_paths[0]
@@ -1299,12 +1306,196 @@ return best_path['path'], confidence, fallback_paths ```
    bandwidth │ │ │ • Direct path preferred │ Criticality: 0.7
    ──────────────────┤ │ │ │ └─────────────────────────────┘ ```
 
-3.  References
+3.  Conventions and Definitions
 
-3.1.  Normative References
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+4.  Security Considerations
+
+   The congestion-aware multipath tunnel selection algorithm introduces
+   several security considerations that implementers and operators MUST
+   address to ensure secure operation in production environments.
+
+4.1.  Algorithm Input Integrity
+
+   The path selection algorithm relies on multiple input parameters
+   including network metrics, historical performance data, and policy
+   constraints.  Attackers who can manipulate these inputs may influence
+   path selection decisions to their advantage:
+
+   *Metric Manipulation*: An attacker with access to network telemetry
+   systems could inject false latency, bandwidth, or loss measurements
+   to force traffic onto paths under their control or to degrade service
+   quality.  Implementations SHOULD authenticate and integrity-protect
+   all metric collection channels.  Where possible, metrics SHOULD be
+   validated through independent measurement sources.
+
+   *Historical Data Poisoning*: Long-term manipulation of historical
+   performance databases could gradually shift path selection
+   preferences.  Implementations SHOULD implement anomaly detection for
+   historical data and SHOULD maintain audit logs of all data
+   modifications.
+
+   *Policy Injection*: Unauthorized modification of policy constraints
+   could bypass geographic routing restrictions or compliance
+   requirements.  Policy databases MUST implement strong access controls
+   and SHOULD require multi-party authorization for policy changes
+   affecting security-sensitive traffic classifications.
+
+4.2.  Congestion Signal Security
+
+   The algorithm's reliance on ECN markings and congestion signals
+   creates potential attack vectors:
+
+   *ECN Spoofing*: Malicious intermediate nodes could inject false ECN
+   Congestion Experienced (CE) markings to influence path selection away
+   from legitimate paths.  While [RFC6040] provides guidance on ECN
+   propagation in tunnels, implementations SHOULD implement mechanisms
+   to detect anomalous ECN marking patterns that may indicate spoofing
+   attempts.
+
+   *Congestion Amplification*: An attacker could artificially induce
+   congestion on specific paths to force traffic redistribution,
+   potentially overwhelming alternative paths.  The algorithm SHOULD
+   implement rate limiting on path switching decisions and SHOULD detect
+   patterns consistent with deliberate congestion induction.
+
+4.3.  Traffic Analysis and Privacy
+
+   Path selection decisions may inadvertently reveal sensitive
+   information:
+
+   *Selection Pattern Analysis*: Consistent path selection patterns may
+   reveal information about traffic types, application usage, or
+   organizational priorities to network observers.  Implementations
+   SHOULD consider adding controlled randomization to path selection
+   decisions for non-critical traffic to reduce fingerprinting
+   opportunities.
+
+   *Timing Correlation*: The timing of path switches may correlate with
+   specific application behaviors or user activities.  Implementations
+   SHOULD avoid immediate path switching in response to transient
+   conditions and SHOULD implement hysteresis mechanisms that obscure
+   the relationship between traffic characteristics and path changes.
+
+   *Metadata Exposure*: The algorithm's input parameters, if transmitted
+   across network boundaries, could expose sensitive operational
+   information.  All algorithm signaling between distributed components
+   MUST be encrypted and authenticated.
+
+4.4.  Multi-Vendor Trust Boundaries
+
+   In heterogeneous deployments spanning multiple vendors, trust
+   relationships require careful consideration:
+
+   *Cross-Vendor Metric Sharing*: When path selection decisions depend
+   on metrics from different vendors' equipment, implementations MUST
+   NOT blindly trust metrics from external sources.  Cross-vendor metric
+   exchanges SHOULD be authenticated and SHOULD be validated against
+   locally observable network behavior.
+
+   *Algorithm Coordination Attacks*: In federated deployments where
+   multiple instances of the algorithm coordinate, a compromised or
+   malicious instance could provide false information to influence
+   global path selection.  Implementations SHOULD implement reputation
+   systems and anomaly detection for federated algorithm participants.
+
+   *Vendor-Specific Vulnerabilities*: Different vendor implementations
+   may have varying security postures.  The algorithm SHOULD support
+   configurable trust levels for different vendor domains and SHOULD
+   allow operators to constrain path selection based on security
+   assessments of traversed infrastructure.
+
+4.5.  Policy Enforcement and Compliance
+
+   The algorithm must ensure that security and compliance policies are
+   consistently enforced:
+
+   *Policy Bypass Prevention*: The algorithm MUST ensure that
+   performance optimization cannot override mandatory security policies.
+   Geographic routing restrictions, encryption requirements, and
+   compliance constraints MUST be treated as hard constraints that
+   cannot be relaxed by the optimization process.
+
+   *Audit and Accountability*: All path selection decisions affecting
+   security-sensitive traffic MUST be logged with sufficient detail to
+   support forensic analysis.  Logs SHOULD include the input parameters,
+   evaluated alternatives, and rationale for the selected path.
+
+   *Regulatory Compliance*: Operators deploying this algorithm in
+   regulated environments MUST ensure that path selection decisions
+   comply with applicable data protection regulations.  The algorithm
+   SHOULD support configurable compliance profiles for different
+   regulatory frameworks (e.g., GDPR, HIPAA, SOX).
+
+4.6.  Denial of Service Considerations
+
+   The algorithm may be targeted by denial of service attacks:
+
+   *Path Exhaustion*: An attacker could attempt to make all available
+   paths appear unsuitable, forcing traffic to fail or use suboptimal
+   routing.  Implementations MUST maintain fallback paths and SHOULD
+   implement graceful degradation rather than complete service denial
+   when optimal paths are unavailable.
+
+   *Algorithmic Complexity Attacks*: Carefully crafted inputs could
+   potentially cause excessive computation in the path selection
+   algorithm.  Implementations SHOULD bound computational complexity and
+   SHOULD implement timeouts for path selection decisions.
+
+   *Oscillation Induction*: An attacker could manipulate network
+   conditions to induce rapid path switching, potentially destabilizing
+   network operations.  The algorithm MUST implement dampening
+   mechanisms to prevent rapid oscillation between paths.
+
+4.7.  Authentication and Authorization
+
+   Access to algorithm configuration and control interfaces requires
+   protection:
+
+   *Configuration Access Control*: Modification of algorithm weights,
+   thresholds, and policies MUST require authentication and
+   authorization.  Role-based access control SHOULD be implemented to
+   limit configuration capabilities based on operator responsibilities.
+
+   *Runtime Control Security*: Interfaces that allow runtime
+   modification of path selection behavior MUST be protected against
+   unauthorized access.  All control plane communications SHOULD use
+   mutual TLS authentication.
+
+4.8.  Zero Trust Alignment
+
+   As discussed in Section 2.4.1, the algorithm SHOULD NOT rely on
+   network-layer trust indicators that can be easily spoofed.  Instead,
+   implementations SHOULD:
+
+   *  Verify traffic characteristics through behavioral analysis rather
+      than declared markings
+
+   *  Implement continuous validation of path security properties
+
+   *  Assume that any network segment may be compromised and select
+      paths accordingly
+
+   *  Support integration with zero trust network access (ZTNA)
+      frameworks for identity-aware path selection
+
+5.  IANA Considerations
+
+   This document has no IANA actions.
+
+6.  References
+
+6.1.  Normative References
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
-              Requirement Levels", March 1997.
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/rfc/rfc2119>.
 
    [RFC3168]  Ramakrishnan, K., Floyd, S., and D. Black, "The Addition
               of Explicit Congestion Notification (ECN) to IP",
@@ -1318,7 +1509,8 @@ return best_path['path'], confidence, fallback_paths ```
               2017.
 
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
-              2119 Key Words", May 2017.
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
 
    [RFC8305]  Schinazi, D. and T. Pauly, "Happy Eyeballs Version 2:
               Better Connectivity Using Concurrency", December 2017.
@@ -1333,7 +1525,7 @@ return best_path['path'], confidence, fallback_paths ```
               Congestion Notification to Protocols that Encapsulate IP",
               August 2024.
 
-3.2.  Informative References
+6.2.  Informative References
 
    [CAREFUL-RESUME]
               Seemann, M. and I. Swett, "Convergence of Congestion
@@ -1412,6 +1604,10 @@ return best_path['path'], confidence, fallback_paths ```
               tsvwg-udp-ecn-03, August 2025,
               <https://datatracker.ietf.org/doc/html/draft-ietf-tsvwg-
               udp-ecn-03>.
+
+Acknowledgments
+
+   TODO acknowledge.
 
 Author's Address
 
