@@ -277,7 +277,7 @@ This integrated approach to congestion management represents a significant advan
 ### Prioritization
 
 Mainstream techniques such as packet marking( DSCP, ECN so on ) and queuing of other non-critical traffic (Fq-CODEL, CAKE AQM) to optimize for realtime streams is essentially prioritization in practice. However, VPN providers, CSPs and/or ISP may employ polar-opposite algorithms to shape traffic based on their interest which could lead to  an overall non-synchronized approach, where a stream is prioritized in some networks and deprioritized in other networks.
-[Diagram: Prioritization across networks - shows how different networks may prioritize the same traffic differently]
+[diagram: prioritization across networks]
 
 
 ## Limited scope of past proposals for prioritiztion or path selection
@@ -311,7 +311,7 @@ Dynamic path selection can even rely on explicitly identifying Provisioning Doma
 
 ### 5. MASQUE (QUIC multiplexing) for all Web trafic
 
-[Diagram: MASQUE QUIC multiplexing architecture showing stream multiplexing over HTTP/3]
+[diagram: masque quic multiplexing architecture]
 
 MASQUE provides the advantage of being able to handle both reliable and unreliable data streams efficiently through QUIC multiplexing, offering flexibility in transport protocol selection. However, this approach has the limitation of not being well-suited for non-web-based traffic, potentially requiring additional adaptations or alternative solutions for enterprise applications that do not follow web protocols.
 
@@ -417,10 +417,10 @@ The congestion-aware multipath tunnel selection algorithm processes multiple inp
 ### Operational Requirements and Constraints
 
 15. **Failure Tolerance Specification**: Configurable parameters defining acceptable service degradation:
-    - Maximum acceptable RTT increase (percentage or absolute value)
+    - Maximum acceptable RTT increase which is a percentage or absolute value
     - Minimum acceptable bandwidth threshold
     - Maximum tolerable packet loss rate
-    - Service availability requirements (e.g., 99.9% uptime)
+    - Service availability requirements e.g., 99.9% uptime
     - Graceful degradation preferences vs hard failover
 
 16. **Cost Considerations**: Economic factors affecting path selection:
