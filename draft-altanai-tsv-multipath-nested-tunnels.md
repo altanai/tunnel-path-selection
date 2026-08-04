@@ -184,6 +184,64 @@ informative:
       - name: C. Huitema
     seriesinfo:
       RFC: 9868
+  RFC8684:
+    title: "TCP Extensions for Multipath Operation with Multiple Addresses"
+    date: 2020-03
+    author:
+      - name: A. Ford
+      - name: C. Raiciu
+      - name: M. Handley
+      - name: O. Bonaventure
+      - name: C. Paasch
+  RFC8938:
+    title: "Application-Layer Traffic Optimization (ALTO) Protocol Northbound API: Use Cases"
+    date: 2020-10
+    author:
+      - name: Q. Wu
+      - name: R. Yang
+      - name: S. Randriamasy
+  RFC8896:
+    title: "Application-Layer Traffic Optimization (ALTO) Cost Calendar"
+    date: 2020-09
+    author:
+      - name: Y. Yang
+      - name: Q. Wu
+      - name: R. Yang
+  RFC9308:
+    title: "Bit Index Explicit Replication (BIER) Traffic Engineering (BIER-TE)"
+    date: 2022-10
+    author:
+      - name: A. Przygienda
+      - name: S. Aldrin
+      - name: J. Chen
+      - name: K. Nagaraj
+  RFC8679:
+    title: "A Framework for Low-Latency, Low-Loss, and Scalable Throughput (L4S) Internet Service"
+    date: 2019-12
+    author:
+      - name: R. Briscoe
+      - name: K. De Schepper
+      - name: B. Briscoe
+  RFC8641:
+    title: "Subscription to YANG Notifications for Datastore Updates"
+    date: 2019-08
+    author:
+      - name: A. Clemm
+      - name: E. Voit
+      - name: A. Bierman
+      - name: M. Bjorklund
+  RFC9232:
+    title: "Dynamic Subscription to YANG Events and Datastore Updates"
+    date: 2022-06
+    author:
+      - name: E. Voit
+      - name: A. Clemm
+      - name: A. Bierman
+  RFC8343:
+    title: "A YANG Data Model for Interface Management"
+    date: 2018-03
+    author:
+      - name: M. Bjorklund
   I-D.ietf-intarea-tunnels:
     title: "IP Tunnels in the Internet"
     date: 2025-01
@@ -273,6 +331,15 @@ To address these multilevel congestion control challenges, the proposed congesti
 
 This integrated approach to congestion management represents a significant advancement over current fragmented solutions, providing a standardized framework that can effectively coordinate congestion control across multiple tunnel layers while maintaining compatibility with existing {{RFC9599}} and {{RFC6040}} standards. By incorporating these multiple congestion indicators into a unified decision-making process, the algorithm can make intelligent path selection decisions that avoid the oscillations and performance degradation inherent in current multilevel congestion control implementations.
 
+In order to remain interoperable with the {{RFC6040}} tunneling requirements, implementations of this algorithm **MUST** behave as *full-functionality* encapsulators unless an operator explicitly configures *limited-functionality* mode. Specifically:
+
+- Tunnel ingress nodes **MUST** copy the inner IP ECN field to the outer IP header when encapsulating, set the outer header to Not-ECT only when the inner header is Not-ECT, and retain CE markings so downstream AQM devices can react consistently.
+- Tunnel egress nodes **MUST** follow the decapsulation logic in Section 4 of {{RFC6040}}, including the requirement to set the restored ECN field to CE if either the inner or outer header indicated CE and to increment congestion counters exposed to the algorithm.
+- When multiple tunnels are chained, each decapsulating node **MUST** aggregate CE counters from all upstream segments before feeding the data into the scoring routine to avoid double counting or suppression of congestion events.
+- If an outer path is not ECN-capable, the algorithm **MUST** downgrade the effective ECN capability of the composite path to Not-ECT and, when possible, prefer alternate tunnels that preserve ECN signaling to comply with {{RFC9599}} guidance on congestion notification transparency.
+
+These requirements ensure that the congestion-aware scoring logic aligns with existing ECN propagation standards and that nested tunnels do not introduce contradictory congestion signals.
+
 
 ### Prioritization
 
@@ -332,7 +399,7 @@ ECN tunneling benefits from having existing standards that provide a foundation 
 
 Flow labeling and classification approaches provide the significant advantage of enabling the application of artificially intelligent machine learning models for sophisticated traffic analysis and optimization, allowing for adaptive and predictive traffic management. However, this approach can compromise privacy by potentially exposing sensitive information about user behavior, application usage patterns, and business processes through the classification metadata.
 
-# Proposal to standardize the selection algorithm
+# Proposal to standardize the selection algorithm {#proposal-to-standardize-the-selection-algorithm}
 
 The VPN can be considered a limited premium network that protects confidential information of an organization such as business communication between retail stores. Hybrid work and move towards private access has increased the interest in tunneling traffic between endpoints. However at present, the traffic steering decision is made in a limited scoped or rule based manner which is different for various networks and service providers. Instead an alternative dynamic strategy is proposed which gauges the confidence in the various available options dynamically and may choose to send data directly via edge gateway, use one or more of the available tunnels or create a new on-demand tunnel, leveraging any of the tunneling protocols best suited.
 
@@ -504,6 +571,17 @@ traffic_profile:
     duration_estimate: "60 minutes"
     data_volume_estimate: "2.25 GB"
 ```
+
+### Telemetry and Policy Acquisition {#telemetry-and-policy-acquisition}
+
+The algorithm assumes access to verifiable telemetry, policy, and sustainability data. Rather than inventing a bespoke transport, implementations **SHOULD** reuse existing IETF mechanisms so that collectors and controllers can interoperate:
+
+- Provisioning Domain data **MUST** follow {{RFC8801}}/{{RFC7556}} JSON conventions so that geographic and policy constraints can be authenticated via PvD signatures.
+- Streaming telemetry such as queue depth, interface utilization, and carbon-intensity metadata **SHOULD** be delivered via YANG-Push dynamic subscriptions ({{RFC8641}}/{{RFC9232}}) using existing models (e.g., {{?RFC8343}} `ietf-interfaces`, {{?I-D.ietf-teas-actn-poi-applicability}} for TE metrics). Subscriptions **MUST** employ NETCONF/RESTCONF over mutually authenticated TLS to protect metric integrity.
+- Energy metrics and SLA parameters that originate from external providers **SHOULD** be distributed using the {{RFC8896}} ALTO protocol when available, allowing multiple vendors to consume the same cost and carbon datasets.
+- Policy repositories conveying compliance requirements **MUST** sign their payloads (JSON Web Signatures or CMS) and **SHOULD** expose a YANG model so operators can audit which constraints feed the scoring logic.
+
+By explicitly binding telemetry collection to existing IETF standards, the draft avoids creating a parallel data plane and enables heterogeneous vendors to exchange the inputs required for consistent scoring.
 
 ## Technical Algorithm Details {#technical-algorithm}
 
@@ -884,6 +962,27 @@ Prior work that standardized algorithms for networking include:
 
 - Happy Eyeballs {{RFC6555}} and Happy Eyeballs Version 2 {{RFC8305}} algorithms for dual-stack hosts
 
+## Interoperability with Existing Multipath Transports {#interop}
+
+The algorithm is transport-agnostic, but it is intentionally designed to interoperate with active multipath efforts:
+
+- **MPTCP ({{RFC8684}})**: Controllers can expose the computed path rankings via the MPTCP path manager API so that subflow establishment favors tunnels whose composite score exceeds the `minimum_acceptable_score`. CE counter aggregation from Section {{congestion}} feeds directly into the coupled congestion controllers defined in {{RFC8684}}.
+- **Multipath DCCP ({{MULTIPATH-DCCP}})**: The per-path congestion likelihood and failure-tolerance outputs map to the connection tuple selection procedure in Section 4 of the draft, allowing endpoints to bias the creation of additional DCCP flows toward tunnels with higher headroom.
+- **QUIC + MASQUE**: MASQUE clients can transport the scoring metadata inside DATAGRAM or H3 control streams so that MASQUE relay selection reflects the same policy inputs as underlay VPNs. QUIC multipath extensions can subscribe to the monitoring hooks from Step 7 to trigger seamless path migration.
+- **PCE/TE Controllers**: When paths terminate on MPLS or SR-MPLS fabrics, the algorithm’s path inventory can be realized as TE tunnels computed by PCE. The composite scores then act as inputs to RFC8231 Stateful PCE updates, ensuring LSP selection aligns with congestion-aware tunnel scoring.
+
+An implementation that already participates in these ecosystems therefore only needs a binding layer that translates the algorithm outputs (preferred path, confidence, fallback set) into the transport’s native control messages.
+
+## Relationship to Existing IETF Traffic Engineering Solutions
+
+This work complements, rather than replaces, other IETF optimizers:
+
+- **RFC9308 (BIER-TE)**: BIER-TE distributes bitstrings for deterministic replication within a single domain. It does not examine congestion telemetry or multi-constraint scoring. The proposed algorithm can select which overlay tunnel (potentially backed by BIER-TE segments) should carry a flow, while BIER-TE continues to engineer the underlay multicast topology.
+- **RFC8938 (ALTO)**: ALTO provides cost maps and endpoint properties at the application layer. The algorithm reuses ALTO as one of its telemetry inputs (Section {{telemetry-and-policy-acquisition}}) but adds congestion, compliance, and environmental criteria plus real-time re-evaluation logic that ALTO alone does not define.
+- **RFC8679 (L4S)**: L4S describes low-latency differentiated services and dual-queue AQMs. The algorithm leverages L4S signals (e.g., ECN CE ratios, queue delay) when available but targets the decision layer that arbitrates between multiple tunnels, ensuring that L4S-enabled traffic is placed onto paths where dual-queue AQMs actually exist.
+
+By articulating these boundaries, the draft clarifies that it builds a standardized decision layer above existing TE, ALTO, and L4S mechanisms while remaining fully compatible with them.
+
 ## Design goals
 
 The goal of standardizing such a path selection algorithm is to enable the network devices including endpoints to make decisions independently when choosing path characteristics over others. An endpoint, for example, can achieve different prioritization based on the application contained inside flows. At the network devices the decision can be propagated or the device can re-use the same decision making algorithms at its end with richer data points to make a more optimized decision.
@@ -892,6 +991,144 @@ The goals of this design are as follows :
 * Avoid strict priority ordering of multiple paths.
 * Avoid static scheduling algorithms such as weighted round robin which do not benefit the majority of use cases such as low latency path for time-sensitive data.
 * Other indirect impacts of the algorithm may also be to overcome strategies which unfairly maximize bandwidth usage in the public internet.
+
+## Benefits for Nested Tunnel Deployments {#nested-tunnel-benefits}
+
+Nested tunnels arise whenever a flow is encapsulated more than once before it reaches its destination. This is common and often unavoidable in modern deployments: a remote worker's MASQUE or QUIC session may traverse a corporate IPsec VPN, which itself rides over a carrier GRE or SR-MPLS underlay, which may in turn be tunneled across a cloud provider's overlay. Each layer is typically provisioned by a different administrative domain that is unaware of the layers above or below it. As noted in {{congestion}} and {{?I-D.ietf-intarea-tunnels}}, this stacking introduces cumulative header overhead, repeated fragmentation, redundant cryptography, and, most damagingly, multiple independent congestion control loops that interact in ways none of the individual layers can observe.
+
+The congestion-aware multipath tunnel selection algorithm is uniquely positioned to mitigate these problems because it treats the *composite* path, that is the full stack of nested encapsulations, as the unit of evaluation rather than scoring each layer in isolation. The following subsections describe the specific benefits.
+
+### Modeling the Nested Tunnel Stack {#nested-stack-model}
+
+To reason about nesting, the algorithm models every candidate path as an ordered stack of encapsulation layers. Each layer contributes its own overhead, congestion-control behavior, ECN capability, and cryptographic properties, and the composite metrics are derived by folding the per-layer contributions together.
+
+```
+Composite Path = Nested Tunnel Stack
+=====================================
+
+  ┌───────────────────────────────────────────────┐
+  │ Application flow (inner transport: TCP / QUIC)  │  <- inner CC loop
+  ├───────────────────────────────────────────────┤
+  │ Layer 3: MASQUE / QUIC (CONNECT-UDP or -IP)     │  <- CC loop + ECN + crypto
+  ├───────────────────────────────────────────────┤
+  │ Layer 2: IPsec (ESP over UDP)                   │  <- ECN copy (RFC 6040) + crypto
+  ├───────────────────────────────────────────────┤
+  │ Layer 1: GRE / SR-MPLS carrier underlay         │  <- ECN copy + overhead
+  └───────────────────────────────────────────────┘
+                       │
+                       ▼
+      Composite metrics fed to scoring routine:
+        overhead   = Σ per-layer header bytes
+        ecn_cap    = AND of per-layer ECN transparency
+        ce_ratio   = aggregate of upstream CE counters (RFC 6040)
+        cc_loops   = count of independent congestion controllers
+        crypto     = set of encryption layers (detect redundancy)
+        eff_mtu    = min over layers after overhead subtraction
+```
+
+By making the stack explicit, the algorithm can detect and penalize pathological nesting instead of silently inheriting its costs.
+
+### Benefit 1: Elimination of Redundant Congestion Control Loops
+
+When an inner transport with its own congestion controller (for example QUIC or TCP) is carried inside a tunnel transport that also runs congestion control (for example QUIC for MASQUE), the two loops compete: the outer loop's backoff distorts the RTT and loss signals that the inner loop measures, producing oscillation and throughput collapse as described in {{congestion}}.
+
+The algorithm addresses this directly by exposing a `cc_loops` count and a congestion-control-interference indicator (Section {{algorithm-inputs}}, inputs 8 and its UDP-options extensions) for every composite path. During composite scoring (Section {{technical-algorithm}}, Step 2) paths that stack multiple active congestion controllers receive a reduced congestion sub-score, biasing selection toward:
+
+- paths where at most one layer performs congestion control, or
+- paths where the outer layer operates in an unreliable/datagram mode (for example MASQUE `CONNECT-UDP` carrying an already-congestion-controlled inner flow) so that only the inner loop governs the rate.
+
+This gives operators a standardized way to prefer "congestion-control-neutral" encapsulations over doubly-controlled ones, rather than each vendor guessing independently.
+
+### Benefit 2: Coherent ECN Propagation Across Layers
+
+Correct congestion signaling in a nested stack requires every encapsulating and decapsulating node to honor {{RFC6040}} and {{RFC9599}}. If any single layer resets or drops the ECN field, the congestion experienced by inner packets becomes invisible to the endpoints, and CE marks applied at one layer may be double-counted or suppressed at another.
+
+The algorithm enforces the full-functionality encapsulation rules already mandated in {{congestion}} and turns compliance into a selection input:
+
+- The composite `ecn_cap` of a stack is the logical AND of each layer's ECN transparency; a single non-transparent layer downgrades the whole path to Not-ECT, which the algorithm penalizes so ECN-preserving stacks are preferred.
+- CE counters are aggregated across all upstream segments before scoring, exactly as required in {{congestion}}, so a CE mark applied deep in the stack is counted once and drives path selection consistently regardless of which layer observed it.
+
+The result is that ECN remains a trustworthy congestion signal end-to-end even through several encapsulations, which is precisely the property that ad hoc per-layer tunneling fails to guarantee.
+
+### Benefit 3: Cumulative Overhead and MTU Coordination
+
+Every layer of nesting adds header bytes and lowers the effective MTU. Uncoordinated layers each run their own Path MTU Discovery, leading to conflicting MTU estimates, black holes, and the repeated fragmentation/reassembly cycles called out in {{RFC4459}} and the path-discovery discussion above.
+
+Using the enhanced overhead and MTU inputs (Section {{algorithm-inputs}}, inputs 6 and 7) the algorithm:
+
+- computes the *summed* header overhead of the entire stack and the *minimum* effective MTU across layers as first-class metrics, so a deeply nested but nominally high-bandwidth path is correctly scored below a shallower path once fragmentation risk is accounted for;
+- performs multi-layer MTU coordination via {{RFC9868}} DPLPMTUD so a single PMTU value is negotiated for the composite path instead of each layer probing independently;
+- proactively steers fragmentation-sensitive, latency-critical flows (for example real-time media) away from stacks whose effective MTU would force fragmentation.
+
+### Benefit 4: Detection of Redundant Encryption and Layer Collapse
+
+A frequent nested-tunnel anti-pattern is wrapping already-encrypted traffic in additional encryption, for example tunneling an end-to-end-encrypted VoIP call through an IPsec VPN through a TLS proxy. This adds latency and CPU cost for no additional security benefit, one of the explicitly non-performing cases listed in {{proposal-to-standardize-the-selection-algorithm}}.
+
+Because the algorithm's path model records the `crypto` set for each layer, it can identify stacks that apply redundant confidentiality and, subject to policy, prefer a path that collapses unnecessary layers, for example sending an already-encrypted flow directly through an edge gateway or a single tunnel rather than nesting. Where policy or compliance ({{algorithm-inputs}}, input 18) requires a specific encryption layer, that layer is retained as a hard constraint and only genuinely redundant layers are candidates for elimination.
+
+### Benefit 5: Nested-Aware Composite Scoring
+
+The per-layer contributions are folded into the existing scoring pipeline so that no new decision framework is needed; nesting simply becomes another dimension of the composite score. The helper below illustrates how a nested stack is reduced to the composite metrics consumed by `calculate_performance_score` in Section {{technical-algorithm}}:
+
+```python
+def summarize_nested_stack(path):
+    """
+    Fold a stack of encapsulation layers into composite metrics.
+    Layers are ordered outer-most first.
+    """
+    overhead_bytes = 0
+    eff_mtu = INITIAL_MTU
+    ecn_transparent = True
+    ce_events = 0
+    cc_loops = 0
+    crypto_layers = []
+
+    for layer in path.layers:
+        overhead_bytes += layer.header_bytes
+        eff_mtu = min(eff_mtu, layer.mtu - layer.header_bytes)
+
+        # RFC 6040 / RFC 9599: one non-transparent layer breaks ECN end-to-end
+        ecn_transparent = ecn_transparent and layer.ecn_transparent
+
+        # Aggregate CE once across the stack to avoid double counting
+        ce_events += layer.ce_counter
+
+        if layer.runs_congestion_control:
+            cc_loops += 1
+
+        if layer.encrypts:
+            crypto_layers.append(layer.cipher_suite)
+
+    return {
+        "overhead_bytes": overhead_bytes,
+        "effective_mtu": eff_mtu,
+        "ecn_capable": ecn_transparent,
+        "aggregate_ce": ce_events,
+        "cc_loop_count": cc_loops,
+        "redundant_crypto": len(crypto_layers) > path.required_crypto_layers,
+    }
+```
+
+The `cc_loop_count`, `ecn_capable`, `effective_mtu`, and `redundant_crypto` fields feed the congestion, latency, and cost sub-scores respectively, so a badly nested path is naturally out-competed by a better-formed one without any special-case logic.
+
+### Worked Example: MASQUE over IPsec over GRE
+
+Consider a flow with three candidate composite paths to the same destination:
+
+| Path | Stack (outer to inner) | CC loops | ECN transparent | Effective MTU | Redundant crypto |
+|------|------------------------|:--------:|:---------------:|:-------------:|:----------------:|
+| A | GRE → IPsec → MASQUE/QUIC → QUIC app | 3 | no (GRE resets ECN) | 1240 B | yes |
+| B | IPsec → MASQUE(`CONNECT-UDP`) → QUIC app | 1 | yes | 1360 B | no |
+| C | Direct edge gateway → QUIC app | 1 | yes | 1420 B | no |
+
+Under legacy per-layer selection, Path A might be chosen because each domain independently reports adequate bandwidth. The composite algorithm instead:
+
+1. Filters on policy (Step 1). If compliance requires the corporate VPN, Path C is dropped and Paths A and B remain; otherwise all three continue.
+2. Applies nested-aware scoring (Steps 2–6): Path A is penalized for three stacked congestion controllers, lost ECN transparency, the lowest effective MTU, and redundant encryption; Path B scores well with a single effective congestion loop, preserved ECN, and no redundant crypto.
+3. Selects Path B (or Path C where policy allows), records the composite confidence score, and keeps the other as a fallback.
+4. Continuously re-evaluates (Step 7); if Path B's aggregate CE ratio rises, the algorithm can migrate to the fallback without reintroducing a doubly-controlled stack.
+
+The outcome is a path selection that a set of independent, layer-local optimizers could not reach, because only the composite view exposes the true cost of nesting. This is the central benefit this work brings to nested tunnel deployments.
 
 ## Benefits for SD-WAN and SASE Architectures {#sdwan-sase-benefits}
 
@@ -983,17 +1220,17 @@ The congestion-aware multipath tunnel selection algorithm introduces several sec
 
 The path selection algorithm relies on multiple input parameters including network metrics, historical performance data, and policy constraints. Attackers who can manipulate these inputs may influence path selection decisions to their advantage:
 
-**Metric Manipulation**: An attacker with access to network telemetry systems could inject false latency, bandwidth, or loss measurements to force traffic onto paths under their control or to degrade service quality. Implementations SHOULD authenticate and integrity-protect all metric collection channels. Where possible, metrics SHOULD be validated through independent measurement sources.
+**Metric Manipulation**: An attacker with access to network telemetry systems could inject false latency, bandwidth, or loss measurements to force traffic onto paths under their control or to degrade service quality. Implementations **MUST** authenticate and integrity-protect all metric collection channels (for example, via mutually authenticated TLS on NETCONF/RESTCONF sessions). Where possible, metrics **SHOULD** be validated through independent measurement sources.
 
-**Historical Data Poisoning**: Long-term manipulation of historical performance databases could gradually shift path selection preferences. Implementations SHOULD implement anomaly detection for historical data and SHOULD maintain audit logs of all data modifications.
+**Historical Data Poisoning**: Long-term manipulation of historical performance databases could gradually shift path selection preferences. Implementations **SHOULD** implement anomaly detection for historical data and **MUST** maintain audit logs of all data modifications.
 
-**Policy Injection**: Unauthorized modification of policy constraints could bypass geographic routing restrictions or compliance requirements. Policy databases MUST implement strong access controls and SHOULD require multi-party authorization for policy changes affecting security-sensitive traffic classifications.
+**Policy Injection**: Unauthorized modification of policy constraints could bypass geographic routing restrictions or compliance requirements. Policy databases **MUST** implement strong access controls and **SHOULD** require multi-party authorization for policy changes affecting security-sensitive traffic classifications.
 
 ## Congestion Signal Security
 
 The algorithm's reliance on ECN markings and congestion signals creates potential attack vectors:
 
-**ECN Spoofing**: Malicious intermediate nodes could inject false ECN Congestion Experienced (CE) markings to influence path selection away from legitimate paths. While {{RFC6040}} provides guidance on ECN propagation in tunnels, implementations SHOULD implement mechanisms to detect anomalous ECN marking patterns that may indicate spoofing attempts.
+**ECN Spoofing**: Malicious intermediate nodes could inject false ECN Congestion Experienced (CE) markings to influence path selection away from legitimate paths. While {{RFC6040}} provides guidance on ECN propagation in tunnels, implementations **SHOULD** implement mechanisms to detect anomalous ECN marking patterns that may indicate spoofing attempts and **MUST** rate-limit path switches triggered solely by CE spikes.
 
 **Congestion Amplification**: An attacker could artificially induce congestion on specific paths to force traffic redistribution, potentially overwhelming alternative paths. The algorithm SHOULD implement rate limiting on path switching decisions and SHOULD detect patterns consistent with deliberate congestion induction.
 
@@ -1001,7 +1238,7 @@ The algorithm's reliance on ECN markings and congestion signals creates potentia
 
 Path selection decisions may inadvertently reveal sensitive information:
 
-**Selection Pattern Analysis**: Consistent path selection patterns may reveal information about traffic types, application usage, or organizational priorities to network observers. Implementations SHOULD consider adding controlled randomization to path selection decisions for non-critical traffic to reduce fingerprinting opportunities.
+**Selection Pattern Analysis**: Consistent path selection patterns may reveal information about traffic types, application usage, or organizational priorities to network observers. Implementations **SHOULD** consider adding controlled randomization to path selection decisions for non-critical traffic to reduce fingerprinting opportunities and **MUST** suppress exporting raw scoring outputs to unsecured analytics feeds.
 
 **Timing Correlation**: The timing of path switches may correlate with specific application behaviors or user activities. Implementations SHOULD avoid immediate path switching in response to transient conditions and SHOULD implement hysteresis mechanisms that obscure the relationship between traffic characteristics and path changes.
 
@@ -1011,9 +1248,9 @@ Path selection decisions may inadvertently reveal sensitive information:
 
 In heterogeneous deployments spanning multiple vendors, trust relationships require careful consideration:
 
-**Cross-Vendor Metric Sharing**: When path selection decisions depend on metrics from different vendors' equipment, implementations MUST NOT blindly trust metrics from external sources. Cross-vendor metric exchanges SHOULD be authenticated and SHOULD be validated against locally observable network behavior.
+**Cross-Vendor Metric Sharing**: When path selection decisions depend on metrics from different vendors' equipment, implementations **MUST NOT** blindly trust metrics from external sources. Cross-vendor metric exchanges **MUST** be authenticated and **SHOULD** be validated against locally observable network behavior.
 
-**Algorithm Coordination Attacks**: In federated deployments where multiple instances of the algorithm coordinate, a compromised or malicious instance could provide false information to influence global path selection. Implementations SHOULD implement reputation systems and anomaly detection for federated algorithm participants.
+**Algorithm Coordination Attacks**: In federated deployments where multiple instances of the algorithm coordinate, a compromised or malicious instance could provide false information to influence global path selection. Implementations **SHOULD** implement reputation systems and anomaly detection for federated algorithm participants, and coordination messages **MUST** be signed.
 
 **Vendor-Specific Vulnerabilities**: Different vendor implementations may have varying security postures. The algorithm SHOULD support configurable trust levels for different vendor domains and SHOULD allow operators to constrain path selection based on security assessments of traversed infrastructure.
 
@@ -1021,7 +1258,7 @@ In heterogeneous deployments spanning multiple vendors, trust relationships requ
 
 The algorithm must ensure that security and compliance policies are consistently enforced:
 
-**Policy Bypass Prevention**: The algorithm MUST ensure that performance optimization cannot override mandatory security policies. Geographic routing restrictions, encryption requirements, and compliance constraints MUST be treated as hard constraints that cannot be relaxed by the optimization process.
+**Policy Bypass Prevention**: The algorithm **MUST** ensure that performance optimization cannot override mandatory security policies. Geographic routing restrictions, encryption requirements, and compliance constraints **MUST** be treated as hard constraints that cannot be relaxed by the optimization process.
 
 **Audit and Accountability**: All path selection decisions affecting security-sensitive traffic MUST be logged with sufficient detail to support forensic analysis. Logs SHOULD include the input parameters, evaluated alternatives, and rationale for the selected path.
 
@@ -1031,17 +1268,17 @@ The algorithm must ensure that security and compliance policies are consistently
 
 The algorithm may be targeted by denial of service attacks:
 
-**Path Exhaustion**: An attacker could attempt to make all available paths appear unsuitable, forcing traffic to fail or use suboptimal routing. Implementations MUST maintain fallback paths and SHOULD implement graceful degradation rather than complete service denial when optimal paths are unavailable.
+**Path Exhaustion**: An attacker could attempt to make all available paths appear unsuitable, forcing traffic to fail or use suboptimal routing. Implementations **MUST** maintain fallback paths and **SHOULD** implement graceful degradation rather than complete service denial when optimal paths are unavailable.
 
-**Algorithmic Complexity Attacks**: Carefully crafted inputs could potentially cause excessive computation in the path selection algorithm. Implementations SHOULD bound computational complexity and SHOULD implement timeouts for path selection decisions.
+**Algorithmic Complexity Attacks**: Carefully crafted inputs could potentially cause excessive computation in the path selection algorithm. Implementations **SHOULD** bound computational complexity and **SHOULD** implement timeouts for path selection decisions.
 
-**Oscillation Induction**: An attacker could manipulate network conditions to induce rapid path switching, potentially destabilizing network operations. The algorithm MUST implement dampening mechanisms to prevent rapid oscillation between paths.
+**Oscillation Induction**: An attacker could manipulate network conditions to induce rapid path switching, potentially destabilizing network operations. The algorithm **MUST** implement dampening mechanisms to prevent rapid oscillation between paths and **MUST** log each forced switch for forensic review.
 
 ## Authentication and Authorization
 
 Access to algorithm configuration and control interfaces requires protection:
 
-**Configuration Access Control**: Modification of algorithm weights, thresholds, and policies MUST require authentication and authorization. Role-based access control SHOULD be implemented to limit configuration capabilities based on operator responsibilities.
+**Configuration Access Control**: Modification of algorithm weights, thresholds, and policies **MUST** require authentication and authorization. Role-based access control **SHOULD** be implemented to limit configuration capabilities based on operator responsibilities, and sensitive changes **MUST** generate audit events.
 
 **Runtime Control Security**: Interfaces that allow runtime modification of path selection behavior MUST be protected against unauthorized access. All control plane communications SHOULD use mutual TLS authentication.
 
