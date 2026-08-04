@@ -1018,7 +1018,7 @@ Composite Path = Nested Tunnel Stack
                        │
                        ▼
       Composite metrics fed to scoring routine:
-        overhead   = Σ per-layer header bytes
+        overhead   = sum of per-layer header bytes
         ecn_cap    = AND of per-layer ECN transparency
         ce_ratio   = aggregate of upstream CE counters (RFC 6040)
         cc_loops   = count of independent congestion controllers
@@ -1115,16 +1115,23 @@ The `cc_loop_count`, `ecn_capable`, `effective_mtu`, and `redundant_crypto` fiel
 
 Consider a flow with three candidate composite paths to the same destination:
 
-| Path | Stack (outer to inner) | CC loops | ECN transparent | Effective MTU | Redundant crypto |
-|------|------------------------|:--------:|:---------------:|:-------------:|:----------------:|
-| A | GRE → IPsec → MASQUE/QUIC → QUIC app | 3 | no (GRE resets ECN) | 1240 B | yes |
-| B | IPsec → MASQUE(`CONNECT-UDP`) → QUIC app | 1 | yes | 1360 B | no |
-| C | Direct edge gateway → QUIC app | 1 | yes | 1420 B | no |
+```
+Candidate composite paths to the same destination
+==================================================
+
+Path | Stack (outer -> inner)                  | CC   | ECN         | Eff.  | Redundant
+     |                                         | loops| transparent | MTU   | crypto
+-----+-----------------------------------------+------+-------------+-------+----------
+ A   | GRE -> IPsec -> MASQUE/QUIC -> QUIC app |  3   | no (GRE     | 1240B | yes
+     |                                         |      | resets ECN) |       |
+ B   | IPsec -> MASQUE(CONNECT-UDP) -> QUIC app|  1   | yes         | 1360B | no
+ C   | Direct edge gateway -> QUIC app         |  1   | yes         | 1420B | no
+```
 
 Under legacy per-layer selection, Path A might be chosen because each domain independently reports adequate bandwidth. The composite algorithm instead:
 
 1. Filters on policy (Step 1). If compliance requires the corporate VPN, Path C is dropped and Paths A and B remain; otherwise all three continue.
-2. Applies nested-aware scoring (Steps 2–6): Path A is penalized for three stacked congestion controllers, lost ECN transparency, the lowest effective MTU, and redundant encryption; Path B scores well with a single effective congestion loop, preserved ECN, and no redundant crypto.
+2. Applies nested-aware scoring (Steps 2-6): Path A is penalized for three stacked congestion controllers, lost ECN transparency, the lowest effective MTU, and redundant encryption; Path B scores well with a single effective congestion loop, preserved ECN, and no redundant crypto.
 3. Selects Path B (or Path C where policy allows), records the composite confidence score, and keeps the other as a fallback.
 4. Continuously re-evaluates (Step 7); if Path B's aggregate CE ratio rises, the algorithm can migrate to the fallback without reintroducing a doubly-controlled stack.
 
