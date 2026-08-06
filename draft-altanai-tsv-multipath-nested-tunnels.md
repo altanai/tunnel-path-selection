@@ -31,7 +31,7 @@ author:
 -
   fullname: Altanai Bisht
   organization: Cisco Meraki
-  email:  @cisco.com
+  email: "albisht@cisco.com"
 
 normative:
   RFC2119:
@@ -577,7 +577,7 @@ traffic_profile:
 The algorithm assumes access to verifiable telemetry, policy, and sustainability data. Rather than inventing a bespoke transport, implementations **SHOULD** reuse existing IETF mechanisms so that collectors and controllers can interoperate:
 
 - Provisioning Domain data **MUST** follow {{RFC8801}}/{{RFC7556}} JSON conventions so that geographic and policy constraints can be authenticated via PvD signatures.
-- Streaming telemetry such as queue depth, interface utilization, and carbon-intensity metadata **SHOULD** be delivered via YANG-Push dynamic subscriptions ({{RFC8641}}/{{RFC9232}}) using existing models (e.g., {{?RFC8343}} `ietf-interfaces`, {{?I-D.ietf-teas-actn-poi-applicability}} for TE metrics). Subscriptions **MUST** employ NETCONF/RESTCONF over mutually authenticated TLS to protect metric integrity.
+- Streaming telemetry such as queue depth, interface utilization, and carbon-intensity metadata **SHOULD** be delivered via YANG-Push dynamic subscriptions ({{RFC8641}}/{{RFC9232}}) using existing models (e.g., {{?RFC8343}} `ietf-interfaces`). Subscriptions **MUST** employ NETCONF/RESTCONF over mutually authenticated TLS to protect metric integrity.
 - Energy metrics and SLA parameters that originate from external providers **SHOULD** be distributed using the {{RFC8896}} ALTO protocol when available, allowing multiple vendors to consume the same cost and carbon datasets.
 - Policy repositories conveying compliance requirements **MUST** sign their payloads (JSON Web Signatures or CMS) and **SHOULD** expose a YANG model so operators can audit which constraints feed the scoring logic.
 
