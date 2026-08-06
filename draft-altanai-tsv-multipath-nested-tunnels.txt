@@ -110,15 +110,28 @@ Table of Contents
        2.1.4.  Operational Requirements and Constraints
        2.1.5.  Security and Policy Metrics
        2.1.6.  Path Evaluation Input Structure
+       2.1.7.  Telemetry and Policy Acquisition
      2.2.  Technical Algorithm Details
        2.2.1.  Algorithm Overview for a sample implementation
        2.2.2.  Algorithm Flow Diagrams
        2.2.3.  Algorithm Configuration and Weights
-     2.3.  Design goals
-     2.4.  Benefits for SD-WAN and SASE Architectures
-       2.4.1.  Zero Trust Security Considerations
-     2.5.  Algorithm's Requirements
-     2.6.  Implementation Strategies
+     2.3.  Interoperability with Existing Multipath Transports
+     2.4.  Relationship to Existing IETF Traffic Engineering Solutions
+     2.5.  Design goals
+     2.6.  Benefits for Nested Tunnel Deployments
+       2.6.1.  Modeling the Nested Tunnel Stack
+       2.6.2.  Benefit 1: Elimination of Redundant Congestion Control
+               Loops
+       2.6.3.  Benefit 2: Coherent ECN Propagation Across Layers
+       2.6.4.  Benefit 3: Cumulative Overhead and MTU Coordination
+       2.6.5.  Benefit 4: Detection of Redundant Encryption and Layer
+               Collapse
+       2.6.6.  Benefit 5: Nested-Aware Composite Scoring
+       2.6.7.  Worked Example: MASQUE over IPsec over GRE
+     2.7.  Benefits for SD-WAN and SASE Architectures
+       2.7.1.  Zero Trust Security Considerations
+     2.8.  Algorithm's Requirements
+     2.9.  Implementation Strategies
    3.  Conventions and Definitions
    4.  Security Considerations
      4.1.  Algorithm Input Integrity
@@ -391,6 +404,37 @@ Table of Contents
    process, the algorithm can make intelligent path selection decisions
    that avoid the oscillations and performance degradation inherent in
    current multilevel congestion control implementations.
+
+   In order to remain interoperable with the [RFC6040] tunneling
+   requirements, implementations of this algorithm *MUST* behave as
+   _full-functionality_ encapsulators unless an operator explicitly
+   configures _limited-functionality_ mode.  Specifically:
+
+   *  Tunnel ingress nodes *MUST* copy the inner IP ECN field to the
+      outer IP header when encapsulating, set the outer header to Not-
+      ECT only when the inner header is Not-ECT, and retain CE markings
+      so downstream AQM devices can react consistently.
+
+   *  Tunnel egress nodes *MUST* follow the decapsulation logic in
+      Section 4 of [RFC6040], including the requirement to set the
+      restored ECN field to CE if either the inner or outer header
+      indicated CE and to increment congestion counters exposed to the
+      algorithm.
+
+   *  When multiple tunnels are chained, each decapsulating node *MUST*
+      aggregate CE counters from all upstream segments before feeding
+      the data into the scoring routine to avoid double counting or
+      suppression of congestion events.
+
+   *  If an outer path is not ECN-capable, the algorithm *MUST*
+      downgrade the effective ECN capability of the composite path to
+      Not-ECT and, when possible, prefer alternate tunnels that preserve
+      ECN signaling to comply with [RFC9599] guidance on congestion
+      notification transparency.
+
+   These requirements ensure that the congestion-aware scoring logic
+   aligns with existing ECN propagation standards and that nested
+   tunnels do not introduce contradictory congestion signals.
 
 1.2.4.  Prioritization
 
@@ -817,6 +861,39 @@ Table of Contents
    ["no_transit_through_china"] duration_estimate: "60 minutes"
    data_volume_estimate: "2.25 GB"
 
+2.1.7.  Telemetry and Policy Acquisition
+
+   The algorithm assumes access to verifiable telemetry, policy, and
+   sustainability data.  Rather than inventing a bespoke transport,
+   implementations *SHOULD* reuse existing IETF mechanisms so that
+   collectors and controllers can interoperate:
+
+   *  Provisioning Domain data *MUST* follow [RFC8801]/[RFC7556] JSON
+      conventions so that geographic and policy constraints can be
+      authenticated via PvD signatures.
+
+   *  Streaming telemetry such as queue depth, interface utilization,
+      and carbon-intensity metadata *SHOULD* be delivered via YANG-Push
+      dynamic subscriptions ([RFC8641]/[RFC9232]) using existing models
+      (e.g., [RFC8343] ietf-interfaces).  Subscriptions *MUST* employ
+      NETCONF/RESTCONF over mutually authenticated TLS to protect metric
+      integrity.
+
+   *  Energy metrics and SLA parameters that originate from external
+      providers *SHOULD* be distributed using the [RFC8896] ALTO
+      protocol when available, allowing multiple vendors to consume the
+      same cost and carbon datasets.
+
+   *  Policy repositories conveying compliance requirements *MUST* sign
+      their payloads (JSON Web Signatures or CMS) and *SHOULD* expose a
+      YANG model so operators can audit which constraints feed the
+      scoring logic.
+
+   By explicitly binding telemetry collection to existing IETF
+   standards, the draft avoids creating a parallel data plane and
+   enables heterogeneous vendors to exchange the inputs required for
+   consistent scoring.
+
 2.2.  Technical Algorithm Details
 
    The core algorithm performs a multi-dimensional optimization to match
@@ -1071,55 +1148,60 @@ return best_path['path'], confidence, fallback_paths ```
    ====================================
 
    Input Attributes → Traffic Profile (T) + Available Paths (P) + Policy
-   Constraints (C) + Weights (W) │ ▼ ┌──────────────────────────────────
-   ───────────────────────────────────────────────────┐ │ STEP 1: POLICY
-   FILTERING │ │ ──────────────────────── │ │ Input: Traffic Profile
-   (Geographic, Compliance, Encryption, Data Sovereignty) │ │ Process:
-   Filter paths based on hard security constraints │ │ Output: Eligible
-   Paths (Filtered P) │ └──────────────────────────────────┬────────────
-   ──────────────────────────────────────┘ │ ▼ ┌────────────────────────
-   ─────────────────────────────────────────────────────────────┐ │ STEP
-   2: PERFORMANCE SCORING │ │ ────────────────────────── │ │ Input:
-   Traffic Profile (Min Bandwidth, Max Latency, Duration) │ │ Process:
-   Calculate scores for Bandwidth, Latency, Reliability, Congestion │ │
-   Output: Performance Scores per Path │ └──────────────────────────────
-   ────┬──────────────────────────────────────────────────┘ │ ▼ ┌───────
-   ─────────────────────────────────────────────────────────────────────
-   ─────────┐ │ STEP 3: COST-BENEFIT ANALYSIS (Based on Input
-   Attributes) │ │ ─────────────────────────────────────────────────────
-   │ │ Input: Traffic Profile (Data Volume, Duration, Max Cost) │ │
-   Process: Calculate data_cost + duration_cost + setup_cost │ │ Output:
-   Cost Scores per Path │ └──────────────────────────────────┬──────────
-   ────────────────────────────────────────┘ │ ▼ ┌──────────────────────
-   ───────────────────────────────────────────────────────────────┐ │
-   STEP 4: ENVIRONMENTAL IMPACT SCORING (Based on Input Attributes) │ │
-   ──────────────────────────────────────────────────────────────── │ │
-   Input: Traffic Profile (Green Preferences, Geographic Constraints) │
-   │ Process: Score Carbon Intensity, Renewable %, Energy Efficiency,
-   Route Efficiency │ │ Output: Environmental Scores per Path │ └───────
-   ───────────────────────────┬─────────────────────────────────────────
-   ─────────┘ │ ▼ ┌─────────────────────────────────────────────────────
-   ────────────────────────────────┐ │ STEP 5: FAILURE TOLERANCE
-   EVALUATION (Based on Input Attributes) │ │
-   ──────────────────────────────────────────────────────────────── │ │
-   Input: Traffic Profile (Max RTT Increase, Min Bandwidth, Min
+   Constraints (C) + Weights (W) │ ▼
+   ┌─────────────────────────────────────────────────────────────────────────────────────┐
+   │ STEP 1: POLICY FILTERING │ │ ──────────────────────── │ │ Input:
+   Traffic Profile (Geographic, Compliance, Encryption, Data
+   Sovereignty) │ │ Process: Filter paths based on hard security
+   constraints │ │ Output: Eligible Paths (Filtered P) │
+   └──────────────────────────────────┬──────────────────────────────────────────────────┘
+   │ ▼
+   ┌─────────────────────────────────────────────────────────────────────────────────────┐
+   │ STEP 2: PERFORMANCE SCORING │ │ ────────────────────────── │ │
+   Input: Traffic Profile (Min Bandwidth, Max Latency, Duration) │ │
+   Process: Calculate scores for Bandwidth, Latency, Reliability,
+   Congestion │ │ Output: Performance Scores per Path │
+   └──────────────────────────────────┬──────────────────────────────────────────────────┘
+   │ ▼
+   ┌─────────────────────────────────────────────────────────────────────────────────────┐
+   │ STEP 3: COST-BENEFIT ANALYSIS (Based on Input Attributes) │ │
+   ───────────────────────────────────────────────────── │ │ Input:
+   Traffic Profile (Data Volume, Duration, Max Cost) │ │ Process:
+   Calculate data_cost + duration_cost + setup_cost │ │ Output: Cost
+   Scores per Path │
+   └──────────────────────────────────┬──────────────────────────────────────────────────┘
+   │ ▼
+   ┌─────────────────────────────────────────────────────────────────────────────────────┐
+   │ STEP 4: ENVIRONMENTAL IMPACT SCORING (Based on Input Attributes) │
+   │ ──────────────────────────────────────────────────────────────── │
+   │ Input: Traffic Profile (Green Preferences, Geographic Constraints)
+   │ │ Process: Score Carbon Intensity, Renewable %, Energy Efficiency,
+   Route Efficiency │ │ Output: Environmental Scores per Path │
+   └──────────────────────────────────┬──────────────────────────────────────────────────┘
+   │ ▼
+   ┌─────────────────────────────────────────────────────────────────────────────────────┐
+   │ STEP 5: FAILURE TOLERANCE EVALUATION (Based on Input Attributes) │
+   │ ──────────────────────────────────────────────────────────────── │
+   │ Input: Traffic Profile (Max RTT Increase, Min Bandwidth, Min
    Availability) │ │ Process: Check RTT tolerance, Bandwidth tolerance,
-   Availability requirements │ │ Output: Tolerance Scores per Path │ └──
-   ────────────────────────────────┬────────────────────────────────────
-   ──────────────┘ │ ▼ ┌────────────────────────────────────────────────
-   ─────────────────────────────────────┐ │ STEP 6: COMPOSITE SCORING
-   AND SELECTION │ │ ─────────────────────────────────────── │ │ Input:
-   All Previous Scores + Optimization Weights (W) │ │ Process: Calculate
-   weighted composite score for each path │ │ Output: Selected Path +
-   Confidence Score + Fallback Paths │ └────────────────────────────────
-   ──┬──────────────────────────────────────────────────┘ │ ▼ ┌─────────
-   ─────────────────────────────────────────────────────────────────────
-   ───────┐ │ STEP 7: DYNAMIC RE-EVALUATION │ │
-   ───────────────────────────── │ │ Input: Current Path Performance +
-   Original Traffic Profile │ │ Process: Continuous monitoring and
-   trigger re-evaluation if degraded │ │ Output: Path Migration Decision
-   (if needed) │ └──────────────────────────────────────────────────────
-   ───────────────────────────────┘ ```
+   Availability requirements │ │ Output: Tolerance Scores per Path │
+   └──────────────────────────────────┬──────────────────────────────────────────────────┘
+   │ ▼
+   ┌─────────────────────────────────────────────────────────────────────────────────────┐
+   │ STEP 6: COMPOSITE SCORING AND SELECTION │ │
+   ─────────────────────────────────────── │ │ Input: All Previous
+   Scores + Optimization Weights (W) │ │ Process: Calculate weighted
+   composite score for each path │ │ Output: Selected Path + Confidence
+   Score + Fallback Paths │
+   └──────────────────────────────────┬──────────────────────────────────────────────────┘
+   │ ▼
+   ┌─────────────────────────────────────────────────────────────────────────────────────┐
+   │ STEP 7: DYNAMIC RE-EVALUATION │ │ ───────────────────────────── │ │
+   Input: Current Path Performance + Original Traffic Profile │ │
+   Process: Continuous monitoring and trigger re-evaluation if degraded
+   │ │ Output: Path Migration Decision (if needed) │
+   └─────────────────────────────────────────────────────────────────────────────────────┘
+   ```
 
 2.2.3.  Algorithm Configuration and Weights
 
@@ -1148,7 +1230,70 @@ return best_path['path'], confidence, fallback_paths ```
    *  Happy Eyeballs [RFC6555] and Happy Eyeballs Version 2 [RFC8305]
       algorithms for dual-stack hosts
 
-2.3.  Design goals
+2.3.  Interoperability with Existing Multipath Transports
+
+   The algorithm is transport-agnostic, but it is intentionally designed
+   to interoperate with active multipath efforts:
+
+   *  *MPTCP ([RFC8684])*: Controllers can expose the computed path
+      rankings via the MPTCP path manager API so that subflow
+      establishment favors tunnels whose composite score exceeds the
+      minimum_acceptable_score.  CE counter aggregation from
+      Section Section 1.2.3 feeds directly into the coupled congestion
+      controllers defined in [RFC8684].
+
+   *  *Multipath DCCP ([MULTIPATH-DCCP])*: The per-path congestion
+      likelihood and failure-tolerance outputs map to the connection
+      tuple selection procedure in Section 4 of the draft, allowing
+      endpoints to bias the creation of additional DCCP flows toward
+      tunnels with higher headroom.
+
+   *  *QUIC + MASQUE*: MASQUE clients can transport the scoring metadata
+      inside DATAGRAM or H3 control streams so that MASQUE relay
+      selection reflects the same policy inputs as underlay VPNs.  QUIC
+      multipath extensions can subscribe to the monitoring hooks from
+      Step 7 to trigger seamless path migration.
+
+   *  *PCE/TE Controllers*: When paths terminate on MPLS or SR-MPLS
+      fabrics, the algorithm’s path inventory can be realized as TE
+      tunnels computed by PCE.  The composite scores then act as inputs
+      to RFC8231 Stateful PCE updates, ensuring LSP selection aligns
+      with congestion-aware tunnel scoring.
+
+   An implementation that already participates in these ecosystems
+   therefore only needs a binding layer that translates the algorithm
+   outputs (preferred path, confidence, fallback set) into the
+   transport’s native control messages.
+
+2.4.  Relationship to Existing IETF Traffic Engineering Solutions
+
+   This work complements, rather than replaces, other IETF optimizers:
+
+   *  *RFC9308 (BIER-TE)*: BIER-TE distributes bitstrings for
+      deterministic replication within a single domain.  It does not
+      examine congestion telemetry or multi-constraint scoring.  The
+      proposed algorithm can select which overlay tunnel (potentially
+      backed by BIER-TE segments) should carry a flow, while BIER-TE
+      continues to engineer the underlay multicast topology.
+
+   *  *RFC8938 (ALTO)*: ALTO provides cost maps and endpoint properties
+      at the application layer.  The algorithm reuses ALTO as one of its
+      telemetry inputs (Section Section 2.1.7) but adds congestion,
+      compliance, and environmental criteria plus real-time re-
+      evaluation logic that ALTO alone does not define.
+
+   *  *RFC8679 (L4S)*: L4S describes low-latency differentiated services
+      and dual-queue AQMs.  The algorithm leverages L4S signals (e.g.,
+      ECN CE ratios, queue delay) when available but targets the
+      decision layer that arbitrates between multiple tunnels, ensuring
+      that L4S-enabled traffic is placed onto paths where dual-queue
+      AQMs actually exist.
+
+   By articulating these boundaries, the draft clarifies that it builds
+   a standardized decision layer above existing TE, ALTO, and L4S
+   mechanisms while remaining fully compatible with them.
+
+2.5.  Design goals
 
    The goal of standardizing such a path selection algorithm is to
    enable the network devices including endpoints to make decisions
@@ -1166,7 +1311,240 @@ return best_path['path'], confidence, fallback_paths ```
    also be to overcome strategies which unfairly maximize bandwidth
    usage in the public internet.
 
-2.4.  Benefits for SD-WAN and SASE Architectures
+2.6.  Benefits for Nested Tunnel Deployments
+
+   Nested tunnels arise whenever a flow is encapsulated more than once
+   before it reaches its destination.  This is common and often
+   unavoidable in modern deployments: a remote worker's MASQUE or QUIC
+   session may traverse a corporate IPsec VPN, which itself rides over a
+   carrier GRE or SR-MPLS underlay, which may in turn be tunneled across
+   a cloud provider's overlay.  Each layer is typically provisioned by a
+   different administrative domain that is unaware of the layers above
+   or below it.  As noted in Section 1.2.3 and
+   [I-D.ietf-intarea-tunnels], this stacking introduces cumulative
+   header overhead, repeated fragmentation, redundant cryptography, and,
+   most damagingly, multiple independent congestion control loops that
+   interact in ways none of the individual layers can observe.
+
+   The congestion-aware multipath tunnel selection algorithm is uniquely
+   positioned to mitigate these problems because it treats the
+   _composite_ path, that is the full stack of nested encapsulations, as
+   the unit of evaluation rather than scoring each layer in isolation.
+   The following subsections describe the specific benefits.
+
+2.6.1.  Modeling the Nested Tunnel Stack
+
+   To reason about nesting, the algorithm models every candidate path as
+   an ordered stack of encapsulation layers.  Each layer contributes its
+   own overhead, congestion-control behavior, ECN capability, and
+   cryptographic properties, and the composite metrics are derived by
+   folding the per-layer contributions together.
+
+   ``` Composite Path = Nested Tunnel Stack
+   =====================================
+
+   ┌───────────────────────────────────────────────┐ │ Application flow
+   (inner transport: TCP / QUIC) │ <- inner CC loop
+   ├───────────────────────────────────────────────┤ │ Layer 3: MASQUE /
+   QUIC (CONNECT-UDP or -IP) │ <- CC loop + ECN + crypto
+   ├───────────────────────────────────────────────┤ │ Layer 2: IPsec
+   (ESP over UDP) │ <- ECN copy (RFC 6040) + crypto
+   ├───────────────────────────────────────────────┤ │ Layer 1: GRE /
+   SR-MPLS carrier underlay │ <- ECN copy + overhead
+   └───────────────────────────────────────────────┘ │ ▼ Composite
+   metrics fed to scoring routine: overhead = sum of per-layer header
+   bytes ecn_cap = AND of per-layer ECN transparency ce_ratio =
+   aggregate of upstream CE counters (RFC 6040) cc_loops = count of
+   independent congestion controllers crypto = set of encryption layers
+   (detect redundancy) eff_mtu = min over layers after overhead
+   subtraction ```
+
+   By making the stack explicit, the algorithm can detect and penalize
+   pathological nesting instead of silently inheriting its costs.
+
+2.6.2.  Benefit 1: Elimination of Redundant Congestion Control Loops
+
+   When an inner transport with its own congestion controller (for
+   example QUIC or TCP) is carried inside a tunnel transport that also
+   runs congestion control (for example QUIC for MASQUE), the two loops
+   compete: the outer loop's backoff distorts the RTT and loss signals
+   that the inner loop measures, producing oscillation and throughput
+   collapse as described in Section 1.2.3.
+
+   The algorithm addresses this directly by exposing a cc_loops count
+   and a congestion-control-interference indicator (Section Section 2.1,
+   inputs 8 and its UDP-options extensions) for every composite path.
+   During composite scoring (Section Section 2.2, Step 2) paths that
+   stack multiple active congestion controllers receive a reduced
+   congestion sub-score, biasing selection toward:
+
+   *  paths where at most one layer performs congestion control, or
+
+   *  paths where the outer layer operates in an unreliable/datagram
+      mode (for example MASQUE CONNECT-UDP carrying an already-
+      congestion-controlled inner flow) so that only the inner loop
+      governs the rate.
+
+   This gives operators a standardized way to prefer "congestion-
+   control-neutral" encapsulations over doubly-controlled ones, rather
+   than each vendor guessing independently.
+
+2.6.3.  Benefit 2: Coherent ECN Propagation Across Layers
+
+   Correct congestion signaling in a nested stack requires every
+   encapsulating and decapsulating node to honor [RFC6040] and
+   [RFC9599].  If any single layer resets or drops the ECN field, the
+   congestion experienced by inner packets becomes invisible to the
+   endpoints, and CE marks applied at one layer may be double-counted or
+   suppressed at another.
+
+   The algorithm enforces the full-functionality encapsulation rules
+   already mandated in Section 1.2.3 and turns compliance into a
+   selection input:
+
+   *  The composite ecn_cap of a stack is the logical AND of each
+      layer's ECN transparency; a single non-transparent layer
+      downgrades the whole path to Not-ECT, which the algorithm
+      penalizes so ECN-preserving stacks are preferred.
+
+   *  CE counters are aggregated across all upstream segments before
+      scoring, exactly as required in Section 1.2.3, so a CE mark
+      applied deep in the stack is counted once and drives path
+      selection consistently regardless of which layer observed it.
+
+   The result is that ECN remains a trustworthy congestion signal end-
+   to-end even through several encapsulations, which is precisely the
+   property that ad hoc per-layer tunneling fails to guarantee.
+
+2.6.4.  Benefit 3: Cumulative Overhead and MTU Coordination
+
+   Every layer of nesting adds header bytes and lowers the effective
+   MTU.  Uncoordinated layers each run their own Path MTU Discovery,
+   leading to conflicting MTU estimates, black holes, and the repeated
+   fragmentation/reassembly cycles called out in [RFC4459] and the path-
+   discovery discussion above.
+
+   Using the enhanced overhead and MTU inputs (Section Section 2.1,
+   inputs 6 and 7) the algorithm:
+
+   *  computes the _summed_ header overhead of the entire stack and the
+      _minimum_ effective MTU across layers as first-class metrics, so a
+      deeply nested but nominally high-bandwidth path is correctly
+      scored below a shallower path once fragmentation risk is accounted
+      for;
+
+   *  performs multi-layer MTU coordination via [RFC9868] DPLPMTUD so a
+      single PMTU value is negotiated for the composite path instead of
+      each layer probing independently;
+
+   *  proactively steers fragmentation-sensitive, latency-critical flows
+      (for example real-time media) away from stacks whose effective MTU
+      would force fragmentation.
+
+2.6.5.  Benefit 4: Detection of Redundant Encryption and Layer Collapse
+
+   A frequent nested-tunnel anti-pattern is wrapping already-encrypted
+   traffic in additional encryption, for example tunneling an end-to-
+   end-encrypted VoIP call through an IPsec VPN through a TLS proxy.
+   This adds latency and CPU cost for no additional security benefit,
+   one of the explicitly non-performing cases listed in Section 2.
+
+   Because the algorithm's path model records the crypto set for each
+   layer, it can identify stacks that apply redundant confidentiality
+   and, subject to policy, prefer a path that collapses unnecessary
+   layers, for example sending an already-encrypted flow directly
+   through an edge gateway or a single tunnel rather than nesting.
+   Where policy or compliance (Section 2.1, input 18) requires a
+   specific encryption layer, that layer is retained as a hard
+   constraint and only genuinely redundant layers are candidates for
+   elimination.
+
+2.6.6.  Benefit 5: Nested-Aware Composite Scoring
+
+   The per-layer contributions are folded into the existing scoring
+   pipeline so that no new decision framework is needed; nesting simply
+   becomes another dimension of the composite score.  The helper below
+   illustrates how a nested stack is reduced to the composite metrics
+   consumed by calculate_performance_score in Section Section 2.2:
+
+   ```python def summarize_nested_stack(path): """ Fold a stack of
+   encapsulation layers into composite metrics.  Layers are ordered
+   outer-most first.  """ overhead_bytes = 0 eff_mtu = INITIAL_MTU
+   ecn_transparent = True ce_events = 0 cc_loops = 0 crypto_layers = []
+
+for layer in path.layers:
+    overhead_bytes += layer.header_bytes
+    eff_mtu = min(eff_mtu, layer.mtu - layer.header_bytes)
+
+    # RFC 6040 / RFC 9599: one non-transparent layer breaks ECN end-to-end
+    ecn_transparent = ecn_transparent and layer.ecn_transparent
+
+    # Aggregate CE once across the stack to avoid double counting
+    ce_events += layer.ce_counter
+
+    if layer.runs_congestion_control:
+        cc_loops += 1
+
+    if layer.encrypts:
+        crypto_layers.append(layer.cipher_suite)
+
+return {
+    "overhead_bytes": overhead_bytes,
+    "effective_mtu": eff_mtu,
+    "ecn_capable": ecn_transparent,
+    "aggregate_ce": ce_events,
+    "cc_loop_count": cc_loops,
+    "redundant_crypto": len(crypto_layers) > path.required_crypto_layers,
+} ```
+
+   The cc_loop_count, ecn_capable, effective_mtu, and redundant_crypto
+   fields feed the congestion, latency, and cost sub-scores
+   respectively, so a badly nested path is naturally out-competed by a
+   better-formed one without any special-case logic.
+
+2.6.7.  Worked Example: MASQUE over IPsec over GRE
+
+   Consider a flow with three candidate composite paths to the same
+   destination:
+
+   ``` Candidate composite paths to the same destination
+   ==================================================
+
+   Path | Stack (outer -> inner) | CC | ECN | Eff.  | Redundant | |
+   loops| transparent | MTU | crypto
+   -----+-----------------------------------------+------+-------------+-------+----------
+   A | GRE -> IPsec -> MASQUE/QUIC -> QUIC app | 3 | no (GRE | 1240B |
+   yes | | | resets ECN) | | B | IPsec -> MASQUE(CONNECT-UDP) -> QUIC
+   app| 1 | yes | 1360B | no C | Direct edge gateway -> QUIC app | 1 |
+   yes | 1420B | no ```
+
+   Under legacy per-layer selection, Path A might be chosen because each
+   domain independently reports adequate bandwidth.  The composite
+   algorithm instead:
+
+   1.  Filters on policy (Step 1).  If compliance requires the corporate
+       VPN, Path C is dropped and Paths A and B remain; otherwise all
+       three continue.
+
+   2.  Applies nested-aware scoring (Steps 2-6): Path A is penalized for
+       three stacked congestion controllers, lost ECN transparency, the
+       lowest effective MTU, and redundant encryption; Path B scores
+       well with a single effective congestion loop, preserved ECN, and
+       no redundant crypto.
+
+   3.  Selects Path B (or Path C where policy allows), records the
+       composite confidence score, and keeps the other as a fallback.
+
+   4.  Continuously re-evaluates (Step 7); if Path B's aggregate CE
+       ratio rises, the algorithm can migrate to the fallback without
+       reintroducing a doubly-controlled stack.
+
+   The outcome is a path selection that a set of independent, layer-
+   local optimizers could not reach, because only the composite view
+   exposes the true cost of nesting.  This is the central benefit this
+   work brings to nested tunnel deployments.
+
+2.7.  Benefits for SD-WAN and SASE Architectures
 
    The standardized congestion-aware multipath tunnel selection
    algorithm provides significant advantages for Software-Defined Wide
@@ -1213,7 +1591,7 @@ return best_path['path'], confidence, fallback_paths ```
    performance requirements, which the algorithm supports through its
    service-aware path selection capabilities.
 
-2.4.1.  Zero Trust Security Considerations
+2.7.1.  Zero Trust Security Considerations
 
    In zero trust network architectures, traditional network-based trust
    assumptions are eliminated, requiring more sophisticated approaches
@@ -1233,7 +1611,7 @@ return best_path['path'], confidence, fallback_paths ```
    self verifying traffic characteristics rather than relying on easily
    spoofed network markings.
 
-2.5.  Algorithm's Requirements
+2.8.  Algorithm's Requirements
 
    The algorithm has primary goal of optimization the network path for
    the traffic stream for achieving the best result in terms of fairness
@@ -1263,7 +1641,7 @@ return best_path['path'], confidence, fallback_paths ```
    It should not - cause a surge of unnecessary traffic - be impacted by
    NAT setups - impact the outbound firewall policies
 
-2.6.  Implementation Strategies
+2.9.  Implementation Strategies
 
    The simplest venue for the implementation of the Path selection
    algorithm is within the application itself.
@@ -1330,21 +1708,23 @@ return best_path['path'], confidence, fallback_paths ```
    *Metric Manipulation*: An attacker with access to network telemetry
    systems could inject false latency, bandwidth, or loss measurements
    to force traffic onto paths under their control or to degrade service
-   quality.  Implementations SHOULD authenticate and integrity-protect
-   all metric collection channels.  Where possible, metrics SHOULD be
-   validated through independent measurement sources.
+   quality.  Implementations *MUST* authenticate and integrity-protect
+   all metric collection channels (for example, via mutually
+   authenticated TLS on NETCONF/RESTCONF sessions).  Where possible,
+   metrics *SHOULD* be validated through independent measurement
+   sources.
 
    *Historical Data Poisoning*: Long-term manipulation of historical
    performance databases could gradually shift path selection
-   preferences.  Implementations SHOULD implement anomaly detection for
-   historical data and SHOULD maintain audit logs of all data
+   preferences.  Implementations *SHOULD* implement anomaly detection
+   for historical data and *MUST* maintain audit logs of all data
    modifications.
 
    *Policy Injection*: Unauthorized modification of policy constraints
    could bypass geographic routing restrictions or compliance
-   requirements.  Policy databases MUST implement strong access controls
-   and SHOULD require multi-party authorization for policy changes
-   affecting security-sensitive traffic classifications.
+   requirements.  Policy databases *MUST* implement strong access
+   controls and *SHOULD* require multi-party authorization for policy
+   changes affecting security-sensitive traffic classifications.
 
 4.2.  Congestion Signal Security
 
@@ -1354,9 +1734,10 @@ return best_path['path'], confidence, fallback_paths ```
    *ECN Spoofing*: Malicious intermediate nodes could inject false ECN
    Congestion Experienced (CE) markings to influence path selection away
    from legitimate paths.  While [RFC6040] provides guidance on ECN
-   propagation in tunnels, implementations SHOULD implement mechanisms
+   propagation in tunnels, implementations *SHOULD* implement mechanisms
    to detect anomalous ECN marking patterns that may indicate spoofing
-   attempts.
+   attempts and *MUST* rate-limit path switches triggered solely by CE
+   spikes.
 
    *Congestion Amplification*: An attacker could artificially induce
    congestion on specific paths to force traffic redistribution,
@@ -1372,9 +1753,10 @@ return best_path['path'], confidence, fallback_paths ```
    *Selection Pattern Analysis*: Consistent path selection patterns may
    reveal information about traffic types, application usage, or
    organizational priorities to network observers.  Implementations
-   SHOULD consider adding controlled randomization to path selection
+   *SHOULD* consider adding controlled randomization to path selection
    decisions for non-critical traffic to reduce fingerprinting
-   opportunities.
+   opportunities and *MUST* suppress exporting raw scoring outputs to
+   unsecured analytics feeds.
 
    *Timing Correlation*: The timing of path switches may correlate with
    specific application behaviors or user activities.  Implementations
@@ -1393,16 +1775,17 @@ return best_path['path'], confidence, fallback_paths ```
    relationships require careful consideration:
 
    *Cross-Vendor Metric Sharing*: When path selection decisions depend
-   on metrics from different vendors' equipment, implementations MUST
-   NOT blindly trust metrics from external sources.  Cross-vendor metric
-   exchanges SHOULD be authenticated and SHOULD be validated against
-   locally observable network behavior.
+   on metrics from different vendors' equipment, implementations *MUST
+   NOT* blindly trust metrics from external sources.  Cross-vendor
+   metric exchanges *MUST* be authenticated and *SHOULD* be validated
+   against locally observable network behavior.
 
    *Algorithm Coordination Attacks*: In federated deployments where
    multiple instances of the algorithm coordinate, a compromised or
    malicious instance could provide false information to influence
-   global path selection.  Implementations SHOULD implement reputation
-   systems and anomaly detection for federated algorithm participants.
+   global path selection.  Implementations *SHOULD* implement reputation
+   systems and anomaly detection for federated algorithm participants,
+   and coordination messages *MUST* be signed.
 
    *Vendor-Specific Vulnerabilities*: Different vendor implementations
    may have varying security postures.  The algorithm SHOULD support
@@ -1415,10 +1798,10 @@ return best_path['path'], confidence, fallback_paths ```
    The algorithm must ensure that security and compliance policies are
    consistently enforced:
 
-   *Policy Bypass Prevention*: The algorithm MUST ensure that
+   *Policy Bypass Prevention*: The algorithm *MUST* ensure that
    performance optimization cannot override mandatory security policies.
    Geographic routing restrictions, encryption requirements, and
-   compliance constraints MUST be treated as hard constraints that
+   compliance constraints *MUST* be treated as hard constraints that
    cannot be relaxed by the optimization process.
 
    *Audit and Accountability*: All path selection decisions affecting
@@ -1438,19 +1821,20 @@ return best_path['path'], confidence, fallback_paths ```
 
    *Path Exhaustion*: An attacker could attempt to make all available
    paths appear unsuitable, forcing traffic to fail or use suboptimal
-   routing.  Implementations MUST maintain fallback paths and SHOULD
+   routing.  Implementations *MUST* maintain fallback paths and *SHOULD*
    implement graceful degradation rather than complete service denial
    when optimal paths are unavailable.
 
    *Algorithmic Complexity Attacks*: Carefully crafted inputs could
    potentially cause excessive computation in the path selection
-   algorithm.  Implementations SHOULD bound computational complexity and
-   SHOULD implement timeouts for path selection decisions.
+   algorithm.  Implementations *SHOULD* bound computational complexity
+   and *SHOULD* implement timeouts for path selection decisions.
 
    *Oscillation Induction*: An attacker could manipulate network
    conditions to induce rapid path switching, potentially destabilizing
-   network operations.  The algorithm MUST implement dampening
-   mechanisms to prevent rapid oscillation between paths.
+   network operations.  The algorithm *MUST* implement dampening
+   mechanisms to prevent rapid oscillation between paths and *MUST* log
+   each forced switch for forensic review.
 
 4.7.  Authentication and Authorization
 
@@ -1458,9 +1842,10 @@ return best_path['path'], confidence, fallback_paths ```
    protection:
 
    *Configuration Access Control*: Modification of algorithm weights,
-   thresholds, and policies MUST require authentication and
-   authorization.  Role-based access control SHOULD be implemented to
-   limit configuration capabilities based on operator responsibilities.
+   thresholds, and policies *MUST* require authentication and
+   authorization.  Role-based access control *SHOULD* be implemented to
+   limit configuration capabilities based on operator responsibilities,
+   and sensitive changes *MUST* generate audit events.
 
    *Runtime Control Security*: Interfaces that allow runtime
    modification of path selection behavior MUST be protected against
@@ -1469,7 +1854,7 @@ return best_path['path'], confidence, fallback_paths ```
 
 4.8.  Zero Trust Alignment
 
-   As discussed in Section 2.4.1, the algorithm SHOULD NOT rely on
+   As discussed in Section 2.7.1, the algorithm SHOULD NOT rely on
    network-layer trust indicators that can be easily spoofed.  Instead,
    implementations SHOULD:
 
@@ -1585,6 +1970,22 @@ return best_path['path'], confidence, fallback_paths ```
               Architecture", RFC 7556, DOI 10.17487/RFC7556, June 2015,
               <https://www.rfc-editor.org/rfc/rfc7556>.
 
+   [RFC8343]  Bjorklund, M., "A YANG Data Model for Interface
+              Management", RFC 8343, DOI 10.17487/RFC8343, March 2018,
+              <https://www.rfc-editor.org/rfc/rfc8343>.
+
+   [RFC8641]  Clemm, A., Voit, E., Bierman, A., and M. Bjorklund,
+              "Subscription to YANG Notifications for Datastore
+              Updates", August 2019.
+
+   [RFC8679]  Briscoe, R., Schepper, K. D., and B. Briscoe, "A Framework
+              for Low-Latency, Low-Loss, and Scalable Throughput (L4S)
+              Internet Service", December 2019.
+
+   [RFC8684]  Ford, A., Raiciu, C., Handley, M., Bonaventure, O., and C.
+              Paasch, "TCP Extensions for Multipath Operation with
+              Multiple Addresses", March 2020.
+
    [RFC8801]  Pfister, P., Vyncke, É., Pauly, T., Schinazi, D., and W.
               Shao, "Discovering Provisioning Domain Names and Data",
               RFC 8801, DOI 10.17487/RFC8801, July 2020,
@@ -1594,6 +1995,20 @@ return best_path['path'], confidence, fallback_paths ```
               Extensible Provisioning Protocol (EPP)", RFC 8807,
               DOI 10.17487/RFC8807, August 2020,
               <https://www.rfc-editor.org/rfc/rfc8807>.
+
+   [RFC8896]  Yang, Y., Wu, Q., and R. Yang, "Application-Layer Traffic
+              Optimization (ALTO) Cost Calendar", September 2020.
+
+   [RFC8938]  Wu, Q., Yang, R., and S. Randriamasy, "Application-Layer
+              Traffic Optimization (ALTO) Protocol Northbound API: Use
+              Cases", October 2020.
+
+   [RFC9232]  Voit, E., Clemm, A., and A. Bierman, "Dynamic Subscription
+              to YANG Events and Datastore Updates", June 2022.
+
+   [RFC9308]  Przygienda, A., Aldrin, S., Chen, J., and K. Nagaraj, "Bit
+              Index Explicit Replication (BIER) Traffic Engineering
+              (BIER-TE)", October 2022.
 
    [RFC9868]  Herbert, T. and C. Huitema, "Transport Options for UDP",
               RFC 9868, December 2024,
